@@ -1,0 +1,24 @@
+
+/* Tailwind placeholder (replace with full precompiled Tailwind v3.x if desired) */
+body{font-family:ui-sans-serif,system-ui}
+.bg-gray-100{background:#f3f4f6}
+.bg-white{background:#fff}
+.text-gray-800{color:#1f2937}
+.shadow{box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.shadow-lg{box-shadow:0 10px 15px rgba(0,0,0,.1)}
+.rounded{border-radius:.375rem}
+.rounded-lg{border-radius:.5rem}
+.rounded-xl{border-radius:.75rem}
+.p-2{padding:.5rem}.p-4{padding:1rem}.p-6{padding:1.5rem}
+.mb-4{margin-bottom:1rem}.mb-6{margin-bottom:1.5rem}
+.grid{display:grid}.grid-cols-3{grid-template-columns:repeat(3,1fr)}.grid-cols-4{grid-template-columns:repeat(4,1fr)}
+.gap-4{gap:1rem}
+.w-full{width:100%}
+.border{border:1px solid #e5e7eb}
+.text-sm{font-size:.875rem}.text-lg{font-size:1.125rem}.text-xl{font-size:1.25rem}
+.font-bold{font-weight:700}.font-semibold{font-weight:600}
+.min-h-screen{min-height:100vh}
+.flex{display:flex}.flex-1{flex:1}
+.hover\:bg-gray-100:hover{background:#f3f4f6}
+.bg-blue-600{background:#2563eb}.hover\:bg-blue-700:hover{background:#1d4ed8}
+.text-white{color:#fff}
