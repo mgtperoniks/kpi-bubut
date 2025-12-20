@@ -4,71 +4,122 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\ProductionLog;
+use App\Models\OperatorSnapshot;
+use App\Models\MachineSnapshot;
+use App\Models\ItemSnapshot;
 use App\Services\KpiCalculatorService;
 
 class ProductionController extends Controller
 {
     /**
      * Form input produksi
+     * Autofill dari master snapshot
      */
     public function create()
     {
-        return view('production.input');
+        return view('production.input', [
+            'operators' => OperatorSnapshot::where('status', 'ACTIVE')->get(),
+            'machines'  => MachineSnapshot::all(),
+            'items'     => ItemSnapshot::all(),
+        ]);
     }
 
     /**
      * Simpan data produksi
+     * Hardening input + snapshot nilai kritis
      */
     public function store(Request $request)
     {
-        // Validasi dasar
-        $request->validate([
+        /**
+         * 1️⃣ VALIDASI DASAR (WAJIB)
+         */
+        $validated = $request->validate([
             'production_date' => 'required|date',
-            'operator'        => 'required|string|max:50',
-            'machine'         => 'required|string|max:50',
-            'item'            => 'required|string|max:100',
+            'shift'           => 'nullable|string|max:10',
+            'operator'        => 'required|string',
+            'machine'         => 'required|string',
+            'item'            => 'required|string',
             'time_start'      => 'required',
             'time_end'        => 'required',
             'actual_qty'      => 'required|integer|min:0',
         ]);
 
-        // Hitung jam kerja menggunakan service
+        /**
+         * 1️⃣a VALIDASI JAM (ANTI JAM MUNDUR)
+         * Penting secara bisnis
+         */
+        if (strtotime($validated['time_end']) <= strtotime($validated['time_start'])) {
+            return back()
+                ->withErrors(['time_end' => 'Jam selesai harus lebih besar dari jam mulai'])
+                ->withInput();
+        }
+
+        /**
+         * 2️⃣ NORMALISASI MINIMAL
+         * Tanpa master data pun tetap disiplin
+         */
+        $operatorCode = strtolower(trim($validated['operator']));
+        $machineCode  = strtolower(trim($validated['machine']));
+        $itemCode     = strtolower(trim($validated['item']));
+
+        /**
+         * 3️⃣ HITUNG JAM KERJA
+         */
         $workHours = KpiCalculatorService::workHours(
-            $request->time_start,
-            $request->time_end
+            $validated['time_start'],
+            $validated['time_end']
         );
 
-        // Sementara: cycle time default (detik)
-        $cycleTimeSec = 600; // 10 menit
+        /**
+         * 4️⃣ SNAPSHOT CYCLE TIME SAAT TRANSAKSI
+         * (nilai historis tidak boleh berubah)
+         */
+        $cycleTimeSec = ItemSnapshot::where('item_code', $itemCode)
+            ->value('cycle_time_sec');
 
-        // Hitung target quantity
+        if (!$cycleTimeSec) {
+            return back()
+                ->withErrors(['item' => 'Cycle time item tidak ditemukan'])
+                ->withInput();
+        }
+
+        /**
+         * 5️⃣ HITUNG TARGET & ACHIEVEMENT
+         */
         $targetQty = KpiCalculatorService::targetQty(
             $workHours,
             $cycleTimeSec
         );
 
-        $actualQty = (int) $request->actual_qty;
+        $actualQty = (int) $validated['actual_qty'];
 
-        // Hitung achievement (%)
         $achievement = KpiCalculatorService::achievement(
             $actualQty,
             $targetQty
         );
 
-        // Simpan ke database
+        /**
+         * 6️⃣ SIMPAN KE FACT TABLE
+         */
         ProductionLog::create([
-            'production_date'       => $request->production_date,
-            'shift'                 => $request->shift ?? 'A',
-            'operator_code'         => $request->operator,
-            'machine_code'          => $request->machine,
-            'item_code'             => $request->item,
-            'time_start'            => $request->time_start,
-            'time_end'              => $request->time_end,
-            'work_hours'            => $workHours,
-            'cycle_time_used_sec'   => $cycleTimeSec,
-            'target_qty'            => $targetQty,
-            'actual_qty'            => $actualQty,
-            'achievement_percent'   => $achievement,
+            'production_date'     => $validated['production_date'],
+            'shift'               => $validated['shift'] ?? 'A',
+
+            // Normalized snapshot reference
+            'operator_code'       => $operatorCode,
+            'machine_code'        => $machineCode,
+            'item_code'           => $itemCode,
+
+            'time_start'          => $validated['time_start'],
+            'time_end'            => $validated['time_end'],
+            'work_hours'          => $workHours,
+
+            // Snapshot nilai kritis
+            'cycle_time_used_sec' => $cycleTimeSec,
+
+            'target_qty'          => $targetQty,
+            'actual_qty'          => $actualQty,
+            'achievement_percent' => $achievement,
         ]);
 
         return redirect()

@@ -1,13 +1,65 @@
-
 @extends('layouts.app')
-@section('title','Dashboard KPI Bubut')
+
+@section('title', 'Dashboard KPI Bubut')
+
 @section('content')
-<x-card title="Ringkasan KPI Hari Ini">
-    <div class="grid grid-cols-4 gap-4 text-center">
-        <div class="bg-gray-50 p-4 rounded"><div class="text-sm">Avg KPI</div><div class="text-xl font-bold">98.5%</div></div>
-        <div class="bg-gray-50 p-4 rounded"><div class="text-sm">Operator</div><div class="text-xl font-bold">12</div></div>
-        <div class="bg-gray-50 p-4 rounded"><div class="text-sm">Mesin</div><div class="text-xl font-bold">8</div></div>
-        <div class="bg-gray-50 p-4 rounded"><div class="text-sm">Output</div><div class="text-xl font-bold">1.240</div></div>
-    </div>
+
+@if(isset($empty))
+<x-card title="Dashboard KPI Bubut">
+    <p class="text-gray-500">Belum ada data KPI.</p>
 </x-card>
+@else
+
+<x-card title="Dashboard KPI Bubut ({{ $date }})">
+
+<div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+
+    <div class="bg-white border rounded p-4 text-center">
+        <div class="text-sm text-gray-500">Avg KPI Operator</div>
+        <div class="text-xl font-bold">
+            {{ number_format($avgKpiOperator, 2) }}%
+        </div>
+    </div>
+
+    <div class="bg-white border rounded p-4 text-center">
+        <div class="text-sm text-gray-500">Avg KPI Mesin</div>
+        <div class="text-xl font-bold">
+            {{ number_format($avgKpiMachine, 2) }}%
+        </div>
+    </div>
+
+    <div class="bg-white border rounded p-4 text-center">
+        <div class="text-sm text-gray-500">Total Output</div>
+        <div class="text-xl font-bold">
+            {{ $totalOutput }}
+        </div>
+    </div>
+
+    <div class="bg-white border rounded p-4 text-center">
+        <div class="text-sm text-gray-500">Total Downtime</div>
+        <div class="text-xl font-bold">
+            {{ $totalDowntime }} menit
+        </div>
+    </div>
+
+    <div class="bg-white border rounded p-4 text-center">
+        <div class="text-sm text-gray-500">Operator Aktif</div>
+        <div class="text-xl font-bold">
+            {{ $activeOperators }}
+        </div>
+    </div>
+
+    <div class="bg-white border rounded p-4 text-center">
+        <div class="text-sm text-gray-500">Mesin Aktif</div>
+        <div class="text-xl font-bold">
+            {{ $activeMachines }}
+        </div>
+    </div>
+
+</div>
+
+</x-card>
+
+@endif
+
 @endsection
