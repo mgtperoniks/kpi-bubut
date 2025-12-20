@@ -3,53 +3,95 @@
 @section('title', 'Input Reject')
 
 @section('content')
-
 <x-card title="Input Reject Produksi">
 
-<form method="POST" action="{{ url('/reject/store') }}" class="grid grid-cols-4 gap-4">
-@csrf
+    <form method="POST" action="{{ url('/reject/store') }}">
+        @csrf
 
-    <div>
-        <label class="text-sm">Tanggal</label>
-        <input type="date" name="reject_date" class="w-full border p-2 rounded">
-    </div>
+        <div class="form-grid">
 
-    <div>
-        <label class="text-sm">Operator</label>
-        <input type="text" name="operator_code" class="w-full border p-2 rounded">
-    </div>
+            {{-- Tanggal Reject --}}
+            <div class="form-group">
+                <label>Tanggal</label>
+                <input
+                    type="date"
+                    name="reject_date"
+                    value="{{ old('reject_date', date('Y-m-d')) }}"
+                    required
+                >
+            </div>
 
-    <div>
-        <label class="text-sm">Mesin</label>
-        <input type="text" name="machine_code" class="w-full border p-2 rounded">
-    </div>
+            {{-- Operator --}}
+            <div class="form-group">
+                <label>Operator</label>
+                <input
+                    type="text"
+                    name="operator_code"
+                    value="{{ old('operator_code') }}"
+                    required
+                >
+            </div>
 
-    <div>
-        <label class="text-sm">Item</label>
-        <input type="text" name="item_code" class="w-full border p-2 rounded">
-    </div>
+            {{-- Mesin --}}
+            <div class="form-group">
+                <label>Mesin</label>
+                <input
+                    type="text"
+                    name="machine_code"
+                    value="{{ old('machine_code') }}"
+                    required
+                >
+            </div>
 
-    <div>
-        <label class="text-sm">Qty Reject</label>
-        <input type="number" name="reject_qty" class="w-full border p-2 rounded">
-    </div>
+            {{-- Item --}}
+            <div class="form-group">
+                <label>Item</label>
+                <input
+                    type="text"
+                    name="item_code"
+                    value="{{ old('item_code') }}"
+                    required
+                >
+            </div>
 
-    <div class="col-span-3">
-        <label class="text-sm">Alasan Reject</label>
-        <input type="text" name="reject_reason" class="w-full border p-2 rounded">
-    </div>
+            {{-- Qty Reject --}}
+            <div class="form-group">
+                <label>Qty Reject</label>
+                <input
+                    type="number"
+                    name="reject_qty"
+                    min="0"
+                    value="{{ old('reject_qty') }}"
+                    required
+                >
+            </div>
 
-    <div class="col-span-4">
-        <label class="text-sm">Catatan</label>
-        <textarea name="note" class="w-full border p-2 rounded"></textarea>
-    </div>
+            {{-- Alasan Reject --}}
+            <div class="form-group form-span-3">
+                <label>Alasan Reject</label>
+                <input
+                    type="text"
+                    name="reject_reason"
+                    value="{{ old('reject_reason') }}"
+                    required
+                >
+            </div>
 
-</form>
+            {{-- Catatan --}}
+            <div class="form-group form-span-4">
+                <label>Catatan</label>
+                <textarea name="note" rows="3">{{ old('note') }}</textarea>
+            </div>
 
-<div class="mt-4">
-    <x-button>Simpan Reject</x-button>
-</div>
+        </div>
+
+        <div class="form-actions">
+            <x-button type="submit">
+                Simpan Reject
+            </x-button>
+        </div>
+
+    </form>
 
 </x-card>
-
 @endsection

@@ -18,146 +18,137 @@
         </div>
     @endif
 
-    <form method="POST" action="{{ url('/produksi/store') }}" class="grid grid-cols-4 gap-4">
+    <form method="POST" action="{{ url('/produksi/store') }}">
         @csrf
 
-        {{-- Tanggal Produksi --}}
-        <div>
-            <label class="text-sm font-medium">Tanggal Produksi</label>
-            <input
-                type="date"
-                name="production_date"
-                class="w-full border rounded p-2"
-                value="{{ old('production_date', date('Y-m-d')) }}"
-                required
-            >
+        <div class="form-grid">
+
+            {{-- Tanggal Produksi --}}
+            <div class="form-group">
+                <label>Tanggal Produksi</label>
+                <input
+                    type="date"
+                    name="production_date"
+                    value="{{ old('production_date', date('Y-m-d')) }}"
+                    required
+                >
+            </div>
+
+            {{-- Shift --}}
+            <div class="form-group">
+                <label>Shift</label>
+                <select name="shift" required>
+                    <option value="A" {{ old('shift') == 'A' ? 'selected' : '' }}>Shift A</option>
+                    <option value="B" {{ old('shift') == 'B' ? 'selected' : '' }}>Shift B</option>
+                    <option value="C" {{ old('shift') == 'C' ? 'selected' : '' }}>Shift C</option>
+                </select>
+            </div>
+
+            {{-- Operator --}}
+            <div class="form-group">
+                <label>Operator</label>
+                <select name="operator" required>
+                    <option value="">-- Pilih Operator --</option>
+                    @foreach($operators as $op)
+                        <option
+                            value="{{ $op->operator_code }}"
+                            {{ old('operator') == $op->operator_code ? 'selected' : '' }}>
+                            {{ $op->operator_name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Mesin --}}
+            <div class="form-group">
+                <label>Mesin</label>
+                <select name="machine" required>
+                    <option value="">-- Pilih Mesin --</option>
+                    @foreach($machines as $m)
+                        <option
+                            value="{{ $m->machine_code }}"
+                            {{ old('machine') == $m->machine_code ? 'selected' : '' }}>
+                            {{ $m->machine_name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Item --}}
+            <div class="form-group">
+                <label>Item</label>
+                <select name="item" id="item_select" required>
+                    <option value="">-- Pilih Item --</option>
+                    @foreach($items as $it)
+                        <option
+                            value="{{ $it->item_code }}"
+                            data-cycle="{{ $it->cycle_time_sec }}"
+                            {{ old('item') == $it->item_code ? 'selected' : '' }}>
+                            {{ $it->item_name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Cycle Time Preview --}}
+            <div class="form-group">
+                <label>Cycle Time (detik)</label>
+                <input
+                    type="number"
+                    id="cycle_time_preview"
+                    readonly
+                >
+            </div>
+
+            {{-- Jam Mulai --}}
+            <div class="form-group">
+                <label>Jam Mulai</label>
+                <input
+                    type="time"
+                    name="time_start"
+                    id="time_start"
+                    value="{{ old('time_start') }}"
+                    required
+                >
+            </div>
+
+            {{-- Jam Selesai --}}
+            <div class="form-group">
+                <label>Jam Selesai</label>
+                <input
+                    type="time"
+                    name="time_end"
+                    id="time_end"
+                    value="{{ old('time_end') }}"
+                    required
+                >
+            </div>
+
+            {{-- Qty Aktual --}}
+            <div class="form-group">
+                <label>Qty Aktual</label>
+                <input
+                    type="number"
+                    name="actual_qty"
+                    min="0"
+                    value="{{ old('actual_qty') }}"
+                    required
+                >
+            </div>
+
+            {{-- Target Preview --}}
+            <div class="form-group">
+                <label>Target (Preview)</label>
+                <input
+                    type="number"
+                    id="target_preview"
+                    readonly
+                >
+            </div>
+
         </div>
 
-        {{-- Shift --}}
-        <div>
-            <label class="text-sm font-medium">Shift</label>
-            <select name="shift" class="w-full border rounded p-2">
-                <option value="A" {{ old('shift') == 'A' ? 'selected' : '' }}>Shift A</option>
-                <option value="B" {{ old('shift') == 'B' ? 'selected' : '' }}>Shift B</option>
-                <option value="C" {{ old('shift') == 'C' ? 'selected' : '' }}>Shift C</option>
-            </select>
-        </div>
-
-        <div></div>
-        <div></div>
-
-        {{-- Operator --}}
-        <div>
-            <label class="text-sm font-medium">Operator</label>
-            <select name="operator" class="w-full border rounded p-2" required>
-                <option value="">-- Pilih Operator --</option>
-                @foreach($operators as $op)
-                    <option
-                        value="{{ $op->operator_code }}"
-                        {{ old('operator') == $op->operator_code ? 'selected' : '' }}
-                    >
-                        {{ $op->operator_name }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
-
-        {{-- Mesin --}}
-        <div>
-            <label class="text-sm font-medium">Mesin</label>
-            <select name="machine" class="w-full border rounded p-2" required>
-                <option value="">-- Pilih Mesin --</option>
-                @foreach($machines as $m)
-                    <option
-                        value="{{ $m->machine_code }}"
-                        {{ old('machine') == $m->machine_code ? 'selected' : '' }}
-                    >
-                        {{ $m->machine_name }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
-
-        {{-- Item --}}
-        <div>
-            <label class="text-sm font-medium">Item</label>
-            <select name="item" id="item_select" class="w-full border rounded p-2" required>
-                <option value="">-- Pilih Item --</option>
-                @foreach($items as $it)
-                    <option
-                        value="{{ $it->item_code }}"
-                        data-cycle="{{ $it->cycle_time_sec }}"
-                        {{ old('item') == $it->item_code ? 'selected' : '' }}
-                    >
-                        {{ $it->item_name }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
-
-        {{-- Cycle Time Preview --}}
-        <div>
-            <label class="text-sm font-medium">Cycle Time (detik)</label>
-            <input
-                type="text"
-                id="cycle_time_preview"
-                class="w-full border rounded p-2 bg-gray-100"
-                readonly
-            >
-        </div>
-
-        {{-- Jam Mulai --}}
-        <div>
-            <label class="text-sm font-medium">Jam Mulai</label>
-            <input
-                type="time"
-                name="time_start"
-                id="time_start"
-                class="w-full border rounded p-2"
-                value="{{ old('time_start') }}"
-                required
-            >
-        </div>
-
-        {{-- Jam Selesai --}}
-        <div>
-            <label class="text-sm font-medium">Jam Selesai</label>
-            <input
-                type="time"
-                name="time_end"
-                id="time_end"
-                class="w-full border rounded p-2"
-                value="{{ old('time_end') }}"
-                required
-            >
-        </div>
-
-        {{-- Qty Aktual --}}
-        <div>
-            <label class="text-sm font-medium">Qty Aktual</label>
-            <input
-                type="number"
-                name="actual_qty"
-                class="w-full border rounded p-2"
-                min="0"
-                value="{{ old('actual_qty') }}"
-                required
-            >
-        </div>
-
-        {{-- Target Preview --}}
-        <div>
-            <label class="text-sm font-medium">Target (Preview)</label>
-            <input
-                type="text"
-                id="target_preview"
-                class="w-full border rounded p-2 bg-gray-100"
-                readonly
-            >
-        </div>
-
-        {{-- Tombol Simpan --}}
-        <div class="col-span-4 mt-6">
+        <div class="form-actions">
             <x-button type="submit">
                 Simpan Data Produksi
             </x-button>
@@ -195,8 +186,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function updateCycleFromSelected() {
         const option = itemSelect.options[itemSelect.selectedIndex];
-        const cycle  = option?.dataset?.cycle || '';
-        cyclePreview.value = cycle;
+        cyclePreview.value = option?.dataset?.cycle || '';
         calculateTarget();
     }
 
@@ -204,7 +194,6 @@ document.addEventListener('DOMContentLoaded', function () {
     timeStart.addEventListener('change', calculateTarget);
     timeEnd.addEventListener('change', calculateTarget);
 
-    // Auto-trigger saat reload (misalnya setelah error)
     updateCycleFromSelected();
 });
 </script>

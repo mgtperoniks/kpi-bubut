@@ -1,37 +1,46 @@
-<aside class="w-64 bg-white shadow-lg min-h-screen">
-    <div class="p-4 font-bold text-lg border-b">
-        KPI Bubut
+<aside class="w-64 min-h-screen">
+    <div class="p-4 border-b">
+        <h1 class="text-lg font-semibold">KPI Bubut</h1>
     </div>
 
-    <nav class="p-4 text-sm space-y-2">
+    <nav class="p-4 text-sm">
 
         <a href="{{ url('/dashboard') }}"
-           class="block px-3 py-2 rounded
-           {{ request()->is('dashboard') ? 'bg-blue-100 font-semibold' : 'hover:bg-gray-100' }}">
+           class="{{ request()->is('dashboard') ? 'active' : '' }}">
             Dashboard
         </a>
 
-        <div class="pt-3 text-gray-500 text-xs uppercase">Input</div>
+        <div class="section-title">Input</div>
 
-        <a href="{{ url('/produksi/input') }}" class="block px-3 py-2 rounded hover:bg-gray-100">
+        <a href="{{ url('/produksi/input') }}"
+           class="{{ request()->is('produksi*') ? 'active' : '' }}">
             Produksi
         </a>
-        <a href="{{ url('/reject/input') }}" class="block px-3 py-2 rounded hover:bg-gray-100">
+
+        <a href="{{ url('/reject/input') }}"
+           class="{{ request()->is('reject*') ? 'active' : '' }}">
             Reject
         </a>
-        <a href="{{ url('/downtime/input') }}" class="block px-3 py-2 rounded hover:bg-gray-100">
+
+        <a href="{{ url('/downtime/input') }}"
+           class="{{ request()->is('downtime/input') ? 'active' : '' }}">
             Downtime
         </a>
 
-        <div class="pt-3 text-gray-500 text-xs uppercase">Tracking</div>
+        <div class="section-title">Tracking</div>
 
-        <a href="{{ url('/tracking/operator') }}" class="block px-3 py-2 rounded hover:bg-gray-100">
+        <a href="{{ url('/tracking/operator') }}"
+           class="{{ request()->is('tracking/operator') ? 'active' : '' }}">
             Operator
         </a>
-        <a href="{{ url('/tracking/mesin') }}" class="block px-3 py-2 rounded hover:bg-gray-100">
+
+        <a href="{{ url('/tracking/mesin') }}"
+           class="{{ request()->is('tracking/mesin') ? 'active' : '' }}">
             Mesin
         </a>
-        <a href="{{ url('/downtime') }}" class="block px-3 py-2 rounded hover:bg-gray-100">
+
+        <a href="{{ url('/downtime') }}"
+           class="{{ request()->is('downtime') ? 'active' : '' }}">
             Downtime
         </a>
 

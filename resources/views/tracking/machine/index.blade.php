@@ -6,35 +6,60 @@
 
 <x-card title="KPI Harian Mesin">
 
-<table>
-    <thead class="bg-gray-100">
-        <tr>
-            <th class="border p-2">Tanggal</th>
-            <th class="border p-2">Mesin</th>
-            <th class="border p-2 text-right">Jam</th>
-            <th class="border p-2 text-right">Target</th>
-            <th class="border p-2 text-right">Aktual</th>
-            <th class="border p-2 text-right">KPI (%)</th>
-            <th class="border p-2">Detail</th>
-        </tr>
-    </thead>
-    <tbody>
-    @foreach($data as $row)
-        <tr>
-            <td class="border p-2">{{ $row->kpi_date }}</td>
-            <td class="border p-2">{{ $row->machine_code }}</td>
-            <td class="border p-2 text-right">{{ $row->total_work_hours }}</td>
-            <td class="border p-2 text-right">{{ $row->total_target_qty }}</td>
-            <td class="border p-2 text-right">{{ $row->total_actual_qty }}</td>
-            <td class="border p-2 text-right font-semibold">{{ $row->kpi_percent }}%</td>
-            <td class="border p-2 text-center">
-                <a href="{{ url('/tracking/mesin/'.$row->machine_code.'/'.$row->kpi_date) }}"
-                   class="text-blue-600 hover:underline">Lihat</a>
-            </td>
-        </tr>
-    @endforeach
-    </tbody>
-</table>
+    <table>
+
+        <thead>
+            <tr>
+                <th>Tanggal</th>
+                <th>Mesin</th>
+                <th class="text-right">Jam</th>
+                <th class="text-right">Target</th>
+                <th class="text-right">Aktual</th>
+                <th class="text-right">KPI (%)</th>
+                <th class="text-center">Status</th>
+                <th class="text-center">Detail</th>
+            </tr>
+        </thead>
+
+        <tbody>
+        @foreach($data as $row)
+            <tr>
+                <td>{{ $row->kpi_date }}</td>
+                <td>{{ $row->machine_code }}</td>
+                <td class="text-right">{{ $row->total_work_hours }}</td>
+                <td class="text-right">{{ $row->total_target_qty }}</td>
+                <td class="text-right">{{ $row->total_actual_qty }}</td>
+
+                {{-- KPI Percent --}}
+                <td class="text-right">
+                    <span class="{{ $row->kpi_percent >= 100 ? 'kpi-good' : 'kpi-bad' }}">
+                        {{ number_format($row->kpi_percent, 1) }}%
+                    </span>
+                </td>
+
+                {{-- Status Badge --}}
+                <td class="text-center">
+                    @if($row->kpi_percent >= 100)
+                        <span class="kpi-badge kpi-ok">OK</span>
+                    @elseif($row->kpi_percent >= 90)
+                        <span class="kpi-badge kpi-warning">WARNING</span>
+                    @else
+                        <span class="kpi-badge kpi-bad">BAD</span>
+                    @endif
+                </td>
+
+                {{-- Detail --}}
+                <td class="text-center">
+                    <a href="{{ url('/tracking/mesin/'.$row->machine_code.'/'.$row->kpi_date) }}"
+                       class="link-detail">
+                        Lihat
+                    </a>
+                </td>
+            </tr>
+        @endforeach
+        </tbody>
+
+    </table>
 
 </x-card>
 

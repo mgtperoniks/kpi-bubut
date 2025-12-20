@@ -9,7 +9,12 @@
         <div><div class="text-sm text-gray-500">Mesin</div><div class="font-bold">{{ $summary->machine_code }}</div></div>
         <div><div class="text-sm text-gray-500">Tanggal</div><div class="font-bold">{{ $summary->kpi_date }}</div></div>
         <div><div class="text-sm text-gray-500">Jam</div><div class="font-bold">{{ $summary->total_work_hours }}</div></div>
-        <div><div class="text-sm text-gray-500">KPI</div><div class="font-bold text-lg">{{ $summary->kpi_percent }}%</div></div>
+        <div><div class="text-lg">
+    <span class="{{ $summary->kpi_percent >= 100 ? 'kpi-good' : 'kpi-bad' }}">
+        {{ $summary->kpi_percent }}%
+    </span>
+</div>
+</div>
     </div>
 </x-card>
 

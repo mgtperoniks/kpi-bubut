@@ -17,6 +17,7 @@ class GenerateDailyKpi extends Command
             ?? Carbon::yesterday()->toDateString();
 
         DailyKpiService::generateOperatorDaily($date);
+         DailyKpiService::generateMachineDaily($date);
 
         $this->info("KPI harian operator generated for {$date}");
     }

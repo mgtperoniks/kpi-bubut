@@ -26,9 +26,11 @@
             <td class="border p-2 text-right">{{ $row->total_work_hours }}</td>
             <td class="border p-2 text-right">{{ $row->total_target_qty }}</td>
             <td class="border p-2 text-right">{{ $row->total_actual_qty }}</td>
-            <td class="border p-2 text-right font-semibold">
-                {{ $row->kpi_percent }}%
-            </td>
+            <td class="border p-2 text-right">
+    <span class="{{ $row->kpi_percent >= 100 ? 'kpi-good' : 'kpi-bad' }}">
+        {{ $row->kpi_percent }}%
+    </span>
+</td>
             <td class="border p-2 text-center">
                 <a href="{{ url('/tracking/operator/'.$row->operator_code.'/'.$row->kpi_date) }}"
                    class="text-blue-600 hover:underline">

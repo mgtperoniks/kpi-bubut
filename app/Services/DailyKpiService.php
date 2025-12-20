@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\DB;
 
 class DailyKpiService
 {
+    /**
+     * Generate KPI harian per Operator
+     */
     public static function generateOperatorDaily(string $date): void
     {
         $rows = ProductionLog::where('production_date', $date)
@@ -29,49 +32,52 @@ class DailyKpiService
 
             DailyKpiOperator::updateOrCreate(
                 [
-                    'kpi_date' => $date,
+                    'kpi_date'      => $date,
                     'operator_code' => $row->operator_code,
                 ],
                 [
-                    'total_work_hours' => $row->total_work_hours,
-                    'total_target_qty' => $row->total_target_qty,
-                    'total_actual_qty' => $row->total_actual_qty,
-                    'kpi_percent' => $kpiPercent,
+                    'total_work_hours'  => $row->total_work_hours,
+                    'total_target_qty'  => $row->total_target_qty,
+                    'total_actual_qty'  => $row->total_actual_qty,
+                    'kpi_percent'       => $kpiPercent,
                 ]
             );
         }
     }
 
-public static function generateMachineDaily(string $date): void
-{
-    $rows = ProductionLog::where('production_date', $date)
-        ->select(
-            'machine_code',
-            DB::raw('SUM(work_hours) as total_work_hours'),
-            DB::raw('SUM(target_qty) as total_target_qty'),
-            DB::raw('SUM(actual_qty) as total_actual_qty')
-        )
-        ->groupBy('machine_code')
-        ->get();
+    /**
+     * Generate KPI harian per Mesin
+     */
+    public static function generateMachineDaily(string $date): void
+    {
+        $rows = ProductionLog::where('production_date', $date)
+            ->select(
+                'machine_code',
+                DB::raw('SUM(work_hours) as total_work_hours'),
+                DB::raw('SUM(target_qty) as total_target_qty'),
+                DB::raw('SUM(actual_qty) as total_actual_qty')
+            )
+            ->groupBy('machine_code')
+            ->get();
 
-    foreach ($rows as $row) {
+        foreach ($rows as $row) {
 
-        $kpiPercent = $row->total_target_qty > 0
-            ? round(($row->total_actual_qty / $row->total_target_qty) * 100, 2)
-            : 0;
+            $kpiPercent = $row->total_target_qty > 0
+                ? round(($row->total_actual_qty / $row->total_target_qty) * 100, 2)
+                : 0;
 
-        DailyKpiMachine::updateOrCreate(
-            [
-                'kpi_date' => $date,
-                'machine_code' => $row->machine_code,
-            ],
-            [
-                'total_work_hours' => $row->total_work_hours,
-                'total_target_qty' => $row->total_target_qty,
-                'total_actual_qty' => $row->total_actual_qty,
-                'kpi_percent' => $kpiPercent,
-            ]
-        );
+            DailyKpiMachine::updateOrCreate(
+                [
+                    'kpi_date'    => $date,
+                    'machine_code'=> $row->machine_code,
+                ],
+                [
+                    'total_work_hours'  => $row->total_work_hours,
+                    'total_target_qty'  => $row->total_target_qty,
+                    'total_actual_qty'  => $row->total_actual_qty,
+                    'kpi_percent'       => $kpiPercent,
+                ]
+            );
+        }
     }
-}
 }
