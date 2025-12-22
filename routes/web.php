@@ -7,6 +7,7 @@ use App\Http\Controllers\TrackingMachineController;
 use App\Http\Controllers\RejectController;
 use App\Http\Controllers\TrackingDowntimeController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ExportController;
 
 Route::get('/', fn()=>redirect('/dashboard'));
 Route::get('/produksi/input', fn()=>view('production.input'));
@@ -28,3 +29,7 @@ Route::post('/reject/store', [RejectController::class, 'store']);
 Route::get('/downtime', [TrackingDowntimeController::class, 'index']);
 
 Route::get('/dashboard', [DashboardController::class, 'index']);
+
+Route::get('/export/operator/{date}', [ExportController::class, 'operatorKpi']);
+Route::get('/export/machine/{date}', [ExportController::class, 'machineKpi']);
+Route::get('/export/downtime/{date}', [ExportController::class, 'downtime']);

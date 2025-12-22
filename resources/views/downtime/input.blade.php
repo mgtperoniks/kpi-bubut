@@ -5,12 +5,25 @@
 @section('content')
 <x-card title="Input Downtime">
 
+    {{-- FEEDBACK --}}
+    @if ($errors->any())
+        <div class="bg-red-100 border border-red-400 text-red-700 p-3 rounded mb-4">
+            {{ $errors->first() }}
+        </div>
+    @endif
+
+    @if (session('success'))
+        <div class="bg-green-100 border border-green-400 text-green-700 p-3 rounded mb-4">
+            {{ session('success') }}
+        </div>
+    @endif
+
     <form method="POST" action="{{ url('/downtime/store') }}">
         @csrf
 
         <div class="form-grid">
 
-            {{-- Tanggal --}}
+            {{-- Tanggal Downtime --}}
             <div class="form-group">
                 <label>Tanggal</label>
                 <input
@@ -26,25 +39,51 @@
                 <label>Mesin</label>
                 <select name="machine_code" required>
                     <option value="">-- Pilih Mesin --</option>
-                    {{-- contoh static, bisa diganti master mesin --}}
-                    <option value="CNC-01">CNC-01</option>
+                    @foreach ($machines as $mc)
+                        <option
+                            value="{{ $mc->code }}"
+                            {{ old('machine_code') == $mc->code ? 'selected' : '' }}>
+                            {{ $mc->name }} ({{ $mc->code }})
+                        </option>
+                    @endforeach
                 </select>
             </div>
 
-            {{-- Durasi --}}
+            {{-- Jam Mulai --}}
             <div class="form-group">
-                <label>Durasi (menit)</label>
+                <label>Jam Mulai</label>
                 <input
-                    type="number"
-                    name="duration_min"
-                    min="1"
-                    value="{{ old('duration_min') }}"
+                    type="time"
+                    name="time_start"
+                    value="{{ old('time_start') }}"
+                    required
+                >
+            </div>
+
+            {{-- Jam Selesai --}}
+            <div class="form-group">
+                <label>Jam Selesai</label>
+                <input
+                    type="time"
+                    name="time_end"
+                    value="{{ old('time_end') }}"
+                    required
+                >
+            </div>
+
+            {{-- Alasan Downtime --}}
+            <div class="form-group form-span-3">
+                <label>Alasan Downtime</label>
+                <input
+                    type="text"
+                    name="reason"
+                    value="{{ old('reason') }}"
                     required
                 >
             </div>
 
             {{-- Catatan --}}
-            <div class="form-group form-span-3">
+            <div class="form-group form-span-4">
                 <label>Catatan</label>
                 <textarea
                     name="note"

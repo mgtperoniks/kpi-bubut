@@ -6,6 +6,16 @@
 
 <x-card title="Ringkasan Downtime per Mesin">
 
+<form method="GET" class="flex gap-2 mb-4">
+    <input type="date" name="date"
+           value="{{ request('date', $date) }}"
+           class="border rounded px-2 py-1 text-sm">
+
+    <button class="bg-blue-600 text-white px-3 py-1 rounded text-sm">
+        Filter
+    </button>
+</form>
+
 <table>
     <thead class="bg-gray-100">
         <tr>
@@ -28,6 +38,17 @@
 </x-card>
 
 <x-card title="Detail Downtime">
+<div class="flex justify-between items-center mb-4">
+    <div class="text-sm text-gray-500">
+        Data Downtime
+    </div>
+
+    <a href="{{ url('/export/downtime/'.$date) }}"
+       class="text-sm bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded">
+        Download Excel
+    </a>
+</div>
+
 
 <table>
     <thead class="bg-gray-100">

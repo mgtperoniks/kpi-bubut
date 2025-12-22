@@ -10,14 +10,25 @@ class Kernel extends ConsoleKernel
     /**
      * Define the application's command schedule.
      */
-    protected function schedule(Schedule $schedule): void
-    {
-        // 00:30 → Generate KPI harian (H-1)
-        $schedule->command('kpi:generate-daily')->dailyAt('12:30');
+   protected function schedule(Schedule $schedule): void
+{
+    // 16:30 → Generate KPI harian (H-1)
+    $schedule->command('kpi:generate-daily')
+        ->dailyAt('16:30')
+        ->withoutOverlapping();
 
-        // 01:00 → Export CSV untuk KPI Hub
-        $schedule->command('kpi:export-csv')->dailyAt('13:00');
-    }
+    // 16:40 → Export CSV KPI
+    $schedule->command('kpi:export-csv')
+        ->dailyAt('16:40')
+        ->withoutOverlapping();
+
+    // Auto cek
+    $schedule->command('kpi:auto-export')
+    ->everyThirtyMinutes()
+    ->withoutOverlapping();
+
+}
+
 
     /**
      * Register the commands for the application.

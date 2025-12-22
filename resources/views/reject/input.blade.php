@@ -5,6 +5,19 @@
 @section('content')
 <x-card title="Input Reject Produksi">
 
+    {{-- FEEDBACK --}}
+    @if ($errors->any())
+        <div class="bg-red-100 border border-red-400 text-red-700 p-3 rounded mb-4">
+            {{ $errors->first() }}
+        </div>
+    @endif
+
+    @if (session('success'))
+        <div class="bg-green-100 border border-green-400 text-green-700 p-3 rounded mb-4">
+            {{ session('success') }}
+        </div>
+    @endif
+
     <form method="POST" action="{{ url('/reject/store') }}">
         @csrf
 
@@ -12,7 +25,7 @@
 
             {{-- Tanggal Reject --}}
             <div class="form-group">
-                <label>Tanggal</label>
+                <label>Tanggal Reject</label>
                 <input
                     type="date"
                     name="reject_date"
@@ -24,34 +37,46 @@
             {{-- Operator --}}
             <div class="form-group">
                 <label>Operator</label>
-                <input
-                    type="text"
-                    name="operator_code"
-                    value="{{ old('operator_code') }}"
-                    required
-                >
+                <select name="operator_code" required>
+                    <option value="">-- Pilih Operator --</option>
+                    @foreach ($operators as $op)
+                        <option
+                            value="{{ $op->code }}"
+                            {{ old('operator_code') == $op->code ? 'selected' : '' }}>
+                            {{ $op->name }} ({{ $op->code }})
+                        </option>
+                    @endforeach
+                </select>
             </div>
 
             {{-- Mesin --}}
             <div class="form-group">
                 <label>Mesin</label>
-                <input
-                    type="text"
-                    name="machine_code"
-                    value="{{ old('machine_code') }}"
-                    required
-                >
+                <select name="machine_code" required>
+                    <option value="">-- Pilih Mesin --</option>
+                    @foreach ($machines as $mc)
+                        <option
+                            value="{{ $mc->code }}"
+                            {{ old('machine_code') == $mc->code ? 'selected' : '' }}>
+                            {{ $mc->name }} ({{ $mc->code }})
+                        </option>
+                    @endforeach
+                </select>
             </div>
 
             {{-- Item --}}
             <div class="form-group">
                 <label>Item</label>
-                <input
-                    type="text"
-                    name="item_code"
-                    value="{{ old('item_code') }}"
-                    required
-                >
+                <select name="item_code" required>
+                    <option value="">-- Pilih Item --</option>
+                    @foreach ($items as $it)
+                        <option
+                            value="{{ $it->code }}"
+                            {{ old('item_code') == $it->code ? 'selected' : '' }}>
+                            {{ $it->name }}
+                        </option>
+                    @endforeach
+                </select>
             </div>
 
             {{-- Qty Reject --}}
@@ -60,7 +85,7 @@
                 <input
                     type="number"
                     name="reject_qty"
-                    min="0"
+                    min="1"
                     value="{{ old('reject_qty') }}"
                     required
                 >

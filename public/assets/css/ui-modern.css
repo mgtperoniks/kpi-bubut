@@ -329,3 +329,7 @@ body {
 label {
     font-weight: 500;
 }
+a[disabled] {
+    pointer-events: none;
+    opacity: 0.6;
+}
