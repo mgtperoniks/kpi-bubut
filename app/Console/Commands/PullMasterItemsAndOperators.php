@@ -9,7 +9,7 @@ use App\Models\MdOperatorMirror;
 
 class PullMasterItemsAndOperators extends Command
 {
-    protected $signature = 'pull:master-items-operators';
+    protected $signature = 'deprecated:pull-master-items-operators';
     protected $description = 'Pull ACTIVE items and operators from Master Data';
 
     public function handle(): int

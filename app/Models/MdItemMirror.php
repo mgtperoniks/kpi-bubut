@@ -14,5 +14,7 @@ class MdItemMirror extends Model
         'department_code',
         'cycle_time_sec',
         'status',
+        'source_updated_at',
+        'last_sync_at',
     ];
 }

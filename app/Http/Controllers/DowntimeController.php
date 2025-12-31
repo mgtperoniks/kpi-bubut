@@ -4,8 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
-// MASTER MIRROR
+// MASTER MIRROR (READ ONLY)
 use App\Models\MdOperator;
 use App\Models\MdMachine;
 
@@ -31,24 +32,48 @@ class DowntimeController extends Controller
 
     /**
      * ===============================
-     * SIMPAN DOWNTIME (VERSI SEDERHANA)
+     * SIMPAN DOWNTIME (HARD STOP)
      * ===============================
      */
     public function store(Request $request)
     {
         /**
-         * 1. VALIDASI INPUT
+         * 1. VALIDASI INPUT DASAR
+         * Server adalah source of truth
          */
         $validated = $request->validate([
             'downtime_date'     => 'required|date',
-            'operator_code'     => 'required|exists:md_operators,code',
-            'machine_code'      => 'required|exists:md_machines,code',
+            'operator_code'     => 'required|string',
+            'machine_code'      => 'required|string',
             'duration_minutes'  => 'required|integer|min:1',
             'note'              => 'nullable|string|max:255',
         ]);
 
         /**
-         * 2. SIMPAN KE FACT TABLE
+         * 2. LOAD MASTER DATA (FAIL FAST)
+         * SSOT DEFENSIVE LAYER
+         */
+        $operator = MdOperator::where('code', $validated['operator_code'])->firstOrFail();
+        $machine  = MdMachine::where('code', $validated['machine_code'])->firstOrFail();
+
+        /**
+         * 3. HARD STOP — MASTERDATA GUARD
+         * KPI TIDAK BOLEH TERCEMAR
+         */
+        if ($operator->status !== 'active') {
+            throw ValidationException::withMessages([
+                'operator_code' => 'Operator inactive tidak boleh digunakan dalam downtime.',
+            ]);
+        }
+
+        if ($machine->status !== 'active') {
+            throw ValidationException::withMessages([
+                'machine_code' => 'Machine inactive tidak boleh digunakan dalam downtime.',
+            ]);
+        }
+
+        /**
+         * 4. SIMPAN KE FACT TABLE
          * Snapshot (NO FK)
          */
         DB::table('downtime_logs')->insert([

@@ -3,9 +3,10 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use App\Models\RejectLog;
 
-// MASTER MIRROR
+// MASTER MIRROR (READ ONLY)
 use App\Models\MdOperator;
 use App\Models\MdMachine;
 use App\Models\MdItem;
@@ -13,7 +14,9 @@ use App\Models\MdItem;
 class RejectController extends Controller
 {
     /**
-     * List data reject
+     * ===============================
+     * LIST DATA REJECT
+     * ===============================
      */
     public function index()
     {
@@ -25,33 +28,36 @@ class RejectController extends Controller
     }
 
     /**
-     * Form input reject
-     * Autofill dari master mirror
+     * ===============================
+     * FORM INPUT REJECT
+     * ===============================
      */
     public function create()
     {
         return view('reject.input', [
-            'operators' => MdOperator::where('active', 1)
+            'operators' => MdOperator::active()
                 ->orderBy('name')
                 ->get(),
 
-            'machines' => MdMachine::where('active', 1)
+            'machines' => MdMachine::active()
                 ->orderBy('name')
                 ->get(),
 
-            'items' => MdItem::where('active', 1)
+            'items' => MdItem::active()
                 ->orderBy('name')
                 ->get(),
         ]);
     }
 
     /**
-     * Simpan data reject
+     * ===============================
+     * SIMPAN DATA REJECT (HARD STOP)
+     * ===============================
      */
     public function store(Request $request)
     {
         /**
-         * VALIDASI MINIMAL (WAJIB)
+         * 1. VALIDASI INPUT DASAR
          */
         $validated = $request->validate([
             'reject_date'   => 'required|date',
@@ -63,11 +69,45 @@ class RejectController extends Controller
             'note'          => 'nullable|string',
         ]);
 
+        /**
+         * 2. LOAD MASTER DATA (FAIL FAST)
+         * SSOT DEFENSIVE LAYER
+         */
+        $operator = MdOperator::where('code', $validated['operator_code'])->firstOrFail();
+        $machine  = MdMachine::where('code', $validated['machine_code'])->firstOrFail();
+        $item     = MdItem::where('code', $validated['item_code'])->firstOrFail();
+
+        /**
+         * 3. HARD STOP — MASTERDATA GUARD
+         * QUALITY KPI TIDAK BOLEH TERCEMAR
+         */
+        if ($operator->status !== 'active') {
+            throw ValidationException::withMessages([
+                'operator_code' => 'Operator inactive tidak boleh digunakan dalam reject.',
+            ]);
+        }
+
+        if ($machine->status !== 'active') {
+            throw ValidationException::withMessages([
+                'machine_code' => 'Machine inactive tidak boleh digunakan dalam reject.',
+            ]);
+        }
+
+        if ($item->status !== 'active') {
+            throw ValidationException::withMessages([
+                'item_code' => 'Item inactive tidak boleh digunakan dalam reject.',
+            ]);
+        }
+
+        /**
+         * 4. SIMPAN KE FACT TABLE
+         * Snapshot (NO FK)
+         */
         RejectLog::create([
             'reject_date'   => $validated['reject_date'],
-            'operator_code' => strtolower(trim($validated['operator_code'])),
-            'machine_code'  => strtolower(trim($validated['machine_code'])),
-            'item_code'     => strtolower(trim($validated['item_code'])),
+            'operator_code' => $this->normalizeCode($validated['operator_code']),
+            'machine_code'  => $this->normalizeCode($validated['machine_code']),
+            'item_code'     => $this->normalizeCode($validated['item_code']),
             'reject_qty'    => $validated['reject_qty'],
             'reject_reason' => $validated['reject_reason'],
             'note'          => $validated['note'] ?? null,
@@ -76,5 +116,15 @@ class RejectController extends Controller
         return redirect()
             ->back()
             ->with('success', 'Data reject berhasil disimpan');
+    }
+
+    /**
+     * ===============================
+     * HELPER NORMALISASI KODE
+     * ===============================
+     */
+    private function normalizeCode(string $value): string
+    {
+        return strtolower(trim($value));
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use App\Models\ProductionLog;
 
 // MASTER MIRROR (READ ONLY)
@@ -30,13 +31,13 @@ class ProductionController extends Controller
 
     /**
      * =================================
-     * SIMPAN DATA PRODUKSI (AMAN)
+     * SIMPAN DATA PRODUKSI (HARD STOP)
      * =================================
      */
     public function store(Request $request)
     {
         /**
-         * 1. VALIDASI INPUT
+         * 1. VALIDASI INPUT DASAR
          * Server adalah source of truth
          */
         $validated = $request->validate([
@@ -45,9 +46,7 @@ class ProductionController extends Controller
 
             'operator_code'   => 'required|string',
             'machine_code'    => 'required|string',
-
-            // VALIDASI KE MASTER MIRROR
-            'item_code'       => 'required|exists:md_items_mirror,code',
+            'item_code'       => 'required|string',
 
             'time_start'      => 'required|date_format:H:i',
             'time_end'        => 'required|date_format:H:i|after:time_start',
@@ -56,15 +55,37 @@ class ProductionController extends Controller
         ]);
 
         /**
-         * 2. AMBIL MASTER ITEM (FAIL FAST)
-         * Cycle time WAJIB dari server
+         * 2. LOAD MASTER DATA (FAIL FAST)
+         * SSOT DEFENSIVE LAYER
          */
-        $item = MdItem::active()
-            ->where('code', $validated['item_code'])
-            ->firstOrFail();
+        $item = MdItem::where('code', $validated['item_code'])->firstOrFail();
+        $machine = MdMachine::where('code', $validated['machine_code'])->firstOrFail();
+        $operator = MdOperator::where('code', $validated['operator_code'])->firstOrFail();
 
         /**
-         * 3. HITUNG DURASI KERJA
+         * 3. HARD STOP — MASTERDATA GUARD
+         * KPI TIDAK BOLEH TERCEMAR
+         */
+        if ($item->status !== 'active') {
+            throw ValidationException::withMessages([
+                'item_code' => 'Item inactive tidak boleh digunakan dalam produksi.',
+            ]);
+        }
+
+        if ($machine->status !== 'active') {
+            throw ValidationException::withMessages([
+                'machine_code' => 'Machine inactive tidak boleh digunakan dalam produksi.',
+            ]);
+        }
+
+        if ($operator->status !== 'active') {
+            throw ValidationException::withMessages([
+                'operator_code' => 'Operator inactive tidak boleh digunakan dalam produksi.',
+            ]);
+        }
+
+        /**
+         * 4. HITUNG DURASI KERJA
          */
         $workSeconds = strtotime($validated['time_end'])
             - strtotime($validated['time_start']);
@@ -78,16 +99,21 @@ class ProductionController extends Controller
         $workHours = round($workSeconds / 3600, 2);
 
         /**
-         * 4. HITUNG TARGET PRODUKSI
+         * 5. HITUNG TARGET PRODUKSI
+         * Snapshot cycle time dari MASTER
          */
         $cycleTimeSec = (int) $item->cycle_time_sec;
 
-        $targetQty = $cycleTimeSec > 0
-            ? intdiv($workSeconds, $cycleTimeSec)
-            : 0;
+        if ($cycleTimeSec <= 0) {
+            throw ValidationException::withMessages([
+                'item_code' => 'Cycle time item tidak valid.',
+            ]);
+        }
+
+        $targetQty = intdiv($workSeconds, $cycleTimeSec);
 
         /**
-         * 5. HITUNG ACHIEVEMENT
+         * 6. HITUNG ACHIEVEMENT
          */
         $actualQty = (int) $validated['actual_qty'];
 
@@ -96,8 +122,8 @@ class ProductionController extends Controller
             : 0;
 
         /**
-         * 6. SIMPAN KE FACT TABLE
-         * Snapshot data (NO FK)
+         * 7. SIMPAN KE FACT TABLE (SNAPSHOT)
+         * NO FK — KPI IMMUTABLE
          */
         ProductionLog::create([
             'production_date'     => $validated['production_date'],
@@ -111,7 +137,7 @@ class ProductionController extends Controller
             'time_end'            => $validated['time_end'],
             'work_hours'          => $workHours,
 
-            // nilai kritis (snapshot)
+            // SNAPSHOT NILAI KRITIS
             'cycle_time_used_sec' => $cycleTimeSec,
             'target_qty'          => $targetQty,
             'actual_qty'          => $actualQty,

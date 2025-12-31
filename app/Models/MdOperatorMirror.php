@@ -12,6 +12,11 @@ class MdOperatorMirror extends Model
         'code',
         'name',
         'department_code',
+        'employment_seq',
         'status',
+        'source_updated_at',
+        'last_sync_at',
     ];
+
+    public $timestamps = false;
 }
