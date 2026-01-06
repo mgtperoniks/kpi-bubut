@@ -3,12 +3,13 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 
-// MASTER MIRROR (READ ONLY)
-use App\Models\MdOperator;
-use App\Models\MdMachine;
+// FACT TABLE
+use App\Models\DowntimeLog;
+
+// MASTER MIRROR (READ ONLY - SSOT)
+use App\Models\MdMachineMirror;
+use App\Models\MdOperatorMirror;
 
 class DowntimeController extends Controller
 {
@@ -20,75 +21,89 @@ class DowntimeController extends Controller
     public function create()
     {
         return view('downtime.input', [
-            'operators' => MdOperator::active()
+            'machines' => MdMachineMirror::where('status', 'active')
                 ->orderBy('code')
-                ->get(),
+                ->get(['code', 'name']),
 
-            'machines'  => MdMachine::active()
-                ->orderBy('code')
-                ->get(),
+            'operators' => MdOperatorMirror::where('status', 'active')
+                ->orderBy('employment_seq')
+                ->get(['code', 'name']),
         ]);
     }
 
     /**
      * ===============================
-     * SIMPAN DOWNTIME (HARD STOP)
+     * SIMPAN DOWNTIME (TIME-BASED, HARD STOP)
      * ===============================
      */
     public function store(Request $request)
     {
         /**
          * 1. VALIDASI INPUT DASAR
-         * Server adalah source of truth
+         * Server = Source of Truth
          */
         $validated = $request->validate([
-            'downtime_date'     => 'required|date',
-            'operator_code'     => 'required|string',
-            'machine_code'      => 'required|string',
-            'duration_minutes'  => 'required|integer|min:1',
-            'note'              => 'nullable|string|max:255',
+            'downtime_date' => 'required|date',
+            'shift'         => 'required|string|max:10',
+
+            'machine_code'  => 'required|string',
+            'operator_code' => 'required|string',
+
+            'time_start'    => 'required|date_format:H:i',
+            'time_end'      => 'required|date_format:H:i|after:time_start',
+
+            'reason'        => 'required|string|max:255',
+            'note'          => 'nullable|string|max:255',
         ]);
 
         /**
-         * 2. LOAD MASTER DATA (FAIL FAST)
-         * SSOT DEFENSIVE LAYER
+         * 2. LOAD MASTER MIRROR (FAIL FAST)
+         * Defensive Availability Layer
          */
-        $operator = MdOperator::where('code', $validated['operator_code'])->firstOrFail();
-        $machine  = MdMachine::where('code', $validated['machine_code'])->firstOrFail();
+        $machine = MdMachineMirror::where('code', $validated['machine_code'])
+            ->where('status', 'active')
+            ->firstOrFail();
+
+        $operator = MdOperatorMirror::where('code', $validated['operator_code'])
+            ->where('status', 'active')
+            ->firstOrFail();
 
         /**
-         * 3. HARD STOP — MASTERDATA GUARD
-         * KPI TIDAK BOLEH TERCEMAR
+         * 3. HITUNG DURASI DOWNTIME (MENIT)
          */
-        if ($operator->status !== 'active') {
-            throw ValidationException::withMessages([
-                'operator_code' => 'Operator inactive tidak boleh digunakan dalam downtime.',
-            ]);
-        }
+        $start = strtotime($validated['time_start']);
+        $end   = strtotime($validated['time_end']);
 
-        if ($machine->status !== 'active') {
-            throw ValidationException::withMessages([
-                'machine_code' => 'Machine inactive tidak boleh digunakan dalam downtime.',
-            ]);
+        $durationMinutes = (int) round(($end - $start) / 60);
+
+        if ($durationMinutes <= 0) {
+            return back()
+                ->withErrors(['time_end' => 'Durasi downtime tidak valid.'])
+                ->withInput();
         }
 
         /**
-         * 4. SIMPAN KE FACT TABLE
-         * Snapshot (NO FK)
+         * 4. SIMPAN KE FACT TABLE (SNAPSHOT)
+         * NO FK — KPI IMMUTABLE
          */
-        DB::table('downtime_logs')->insert([
+        DowntimeLog::create([
             'downtime_date'    => $validated['downtime_date'],
-            'operator_code'    => $this->normalizeCode($validated['operator_code']),
-            'machine_code'     => $this->normalizeCode($validated['machine_code']),
-            'duration_minutes' => $validated['duration_minutes'],
-            'note'             => $validated['note'],
-            'created_at'       => now(),
-            'updated_at'       => now(),
+            'shift'            => $validated['shift'],
+
+            'machine_code'     => $this->normalizeCode($machine->code),
+            'operator_code'    => $this->normalizeCode($operator->code),
+
+            'time_start'       => $validated['time_start'],
+            'time_end'         => $validated['time_end'],
+            'duration_minutes' => $durationMinutes,
+
+            'reason'           => $validated['reason'],
+            'note'             => $validated['note'] ?? null,
         ]);
 
         return redirect()
-            ->route('downtime.input')
-            ->with('success', 'Downtime berhasil disimpan');
+            ->back()
+            ->with('success', 'Downtime berhasil disimpan.');
     }
 
     /**

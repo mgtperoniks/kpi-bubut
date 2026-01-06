@@ -7,6 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 class MdMachineMirror extends Model
 {
     protected $table = 'md_machines_mirror';
+    protected $primaryKey = 'code';
+    public $incrementing = false;
+    protected $keyType = 'string';
+    public $timestamps = false;
 
     protected $fillable = [
         'code',
@@ -14,14 +18,7 @@ class MdMachineMirror extends Model
         'department_code',
         'line_code',
         'status',
-        'runtime_status',
-        'last_seen_at',
-        'last_active_module',
+        'source_updated_at',
         'last_sync_at',
-    ];
-
-    protected $casts = [
-        'last_seen_at' => 'datetime',
-        'last_sync_at' => 'datetime',
     ];
 }

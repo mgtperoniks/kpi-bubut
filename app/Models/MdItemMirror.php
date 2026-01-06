@@ -7,6 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 class MdItemMirror extends Model
 {
     protected $table = 'md_items_mirror';
+    protected $primaryKey = 'code';
+    public $incrementing = false;
+    protected $keyType = 'string';
+    public $timestamps = false;
 
     protected $fillable = [
         'code',

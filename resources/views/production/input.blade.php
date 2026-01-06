@@ -5,13 +5,21 @@
 @section('content')
 <x-card title="Input Hasil Operator Bubut">
 
-    {{-- FEEDBACK USER --}}
+    {{-- ===============================
+         DEBUG ERROR (WAJIB ADA)
+         =============================== --}}
     @if ($errors->any())
-        <div class="alert alert-danger mb-4">
-            {{ $errors->first() }}
+        <div style="color:red; padding:10px; border:1px solid red; margin-bottom:16px;">
+            <strong>Error:</strong>
+            <ul style="margin:0; padding-left:18px;">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
         </div>
     @endif
 
+    {{-- SUCCESS MESSAGE --}}
     @if (session('success'))
         <div class="alert alert-success mb-4">
             {{ session('success') }}
@@ -26,17 +34,20 @@
             {{-- TANGGAL PRODUKSI --}}
             <div class="form-group">
                 <label for="production_date">Tanggal Produksi</label>
-                <input type="date"
-                       id="production_date"
-                       name="production_date"
-                       value="{{ old('production_date', now()->toDateString()) }}"
-                       required>
+                <input
+                    type="date"
+                    id="production_date"
+                    name="production_date"
+                    value="{{ old('production_date', now()->toDateString()) }}"
+                    required
+                >
             </div>
 
             {{-- SHIFT --}}
             <div class="form-group">
                 <label for="shift">Shift</label>
                 <select id="shift" name="shift" required>
+                    <option value="">-- Pilih Shift --</option>
                     @foreach (['A','B','C'] as $shift)
                         <option value="{{ $shift }}"
                             {{ old('shift') === $shift ? 'selected' : '' }}>
@@ -83,7 +94,7 @@
                         <option value="{{ $item->code }}"
                                 data-cycle="{{ $item->cycle_time_sec }}"
                                 {{ old('item_code') === $item->code ? 'selected' : '' }}>
-                            {{ $item->code }} — {{ $item->name }}
+                            {{ $item->code }} - {{ $item->name }}
                         </option>
                     @endforeach
                 </select>
@@ -92,48 +103,60 @@
             {{-- PREVIEW CYCLE TIME --}}
             <div class="form-group">
                 <label>Cycle Time (detik)</label>
-                <input type="number"
-                       id="cycle_time_preview"
-                       readonly>
+                <input
+                    type="number"
+                    id="cycle_time_preview"
+                    readonly
+                    tabindex="-1"
+                >
             </div>
 
             {{-- JAM MULAI --}}
             <div class="form-group">
                 <label for="time_start">Jam Mulai</label>
-                <input type="time"
-                       id="time_start"
-                       name="time_start"
-                       value="{{ old('time_start') }}"
-                       required>
+                <input
+                    type="time"
+                    id="time_start"
+                    name="time_start"
+                    value="{{ old('time_start') }}"
+                    required
+                >
             </div>
 
             {{-- JAM SELESAI --}}
             <div class="form-group">
                 <label for="time_end">Jam Selesai</label>
-                <input type="time"
-                       id="time_end"
-                       name="time_end"
-                       value="{{ old('time_end') }}"
-                       required>
+                <input
+                    type="time"
+                    id="time_end"
+                    name="time_end"
+                    value="{{ old('time_end') }}"
+                    required
+                >
             </div>
 
             {{-- QTY AKTUAL --}}
             <div class="form-group">
                 <label for="actual_qty">Qty Aktual</label>
-                <input type="number"
-                       id="actual_qty"
-                       name="actual_qty"
-                       min="0"
-                       value="{{ old('actual_qty') }}"
-                       required>
+                <input
+                    type="number"
+                    id="actual_qty"
+                    name="actual_qty"
+                    min="0"
+                    value="{{ old('actual_qty') }}"
+                    required
+                >
             </div>
 
             {{-- PREVIEW TARGET --}}
             <div class="form-group">
                 <label>Target (Preview)</label>
-                <input type="number"
-                       id="target_preview"
-                       readonly>
+                <input
+                    type="number"
+                    id="target_preview"
+                    readonly
+                    tabindex="-1"
+                >
             </div>
 
         </div>
@@ -149,6 +172,7 @@
 
 {{-- ===============================
      JS PREVIEW (NON KRITIS)
+     UI ONLY — BACKEND TETAP SSOT
      =============================== --}}
 <script>
 document.addEventListener('DOMContentLoaded', () => {

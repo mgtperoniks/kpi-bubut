@@ -4,12 +4,13 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+
 use App\Models\ProductionLog;
 
-// MASTER MIRROR (READ ONLY)
-use App\Models\MdOperator;
-use App\Models\MdMachine;
-use App\Models\MdItem;
+// MASTER MIRROR (READ ONLY - SSOT)
+use App\Models\MdItemMirror;
+use App\Models\MdMachineMirror;
+use App\Models\MdOperatorMirror;
 
 class ProductionController extends Controller
 {
@@ -21,11 +22,17 @@ class ProductionController extends Controller
     public function create()
     {
         return view('production.input', [
-            'operators' => MdOperator::active()->orderBy('name')->get(),
-            'machines'  => MdMachine::active()->orderBy('name')->get(),
-            'items'     => MdItem::active()
+            'items' => MdItemMirror::where('status', 'active')
                 ->orderBy('code')
                 ->get(['code', 'name', 'cycle_time_sec']),
+
+            'machines' => MdMachineMirror::where('status', 'active')
+                ->orderBy('code')
+                ->get(['code', 'name']),
+
+            'operators' => MdOperatorMirror::where('status', 'active')
+                ->orderBy('employment_seq')
+                ->get(['code', 'name']),
         ]);
     }
 
@@ -37,8 +44,17 @@ class ProductionController extends Controller
     public function store(Request $request)
     {
         /**
+         * ===============================
+         * DEBUG PALING CEPAT (SEMENTARA)
+         * ===============================
+         * AKTIFKAN JIKA ADA ERROR FORM
+         * Setelah ketemu masalah → HAPUS BARIS INI
+         */
+         //dd($request->all());
+
+        /**
          * 1. VALIDASI INPUT DASAR
-         * Server adalah source of truth
+         * Server = Source of Truth
          */
         $validated = $request->validate([
             'production_date' => 'required|date',
@@ -55,52 +71,37 @@ class ProductionController extends Controller
         ]);
 
         /**
-         * 2. LOAD MASTER DATA (FAIL FAST)
-         * SSOT DEFENSIVE LAYER
+         * 2. LOAD MASTER MIRROR (FAIL FAST)
+         * Defensive KPI Layer
          */
-        $item = MdItem::where('code', $validated['item_code'])->firstOrFail();
-        $machine = MdMachine::where('code', $validated['machine_code'])->firstOrFail();
-        $operator = MdOperator::where('code', $validated['operator_code'])->firstOrFail();
+        $item = MdItemMirror::where('code', $validated['item_code'])
+            ->where('status', 'active')
+            ->firstOrFail();
+
+        $machine = MdMachineMirror::where('code', $validated['machine_code'])
+            ->where('status', 'active')
+            ->firstOrFail();
+
+        $operator = MdOperatorMirror::where('code', $validated['operator_code'])
+            ->where('status', 'active')
+            ->firstOrFail();
 
         /**
-         * 3. HARD STOP — MASTERDATA GUARD
-         * KPI TIDAK BOLEH TERCEMAR
-         */
-        if ($item->status !== 'active') {
-            throw ValidationException::withMessages([
-                'item_code' => 'Item inactive tidak boleh digunakan dalam produksi.',
-            ]);
-        }
-
-        if ($machine->status !== 'active') {
-            throw ValidationException::withMessages([
-                'machine_code' => 'Machine inactive tidak boleh digunakan dalam produksi.',
-            ]);
-        }
-
-        if ($operator->status !== 'active') {
-            throw ValidationException::withMessages([
-                'operator_code' => 'Operator inactive tidak boleh digunakan dalam produksi.',
-            ]);
-        }
-
-        /**
-         * 4. HITUNG DURASI KERJA
+         * 3. HITUNG DURASI KERJA
          */
         $workSeconds = strtotime($validated['time_end'])
             - strtotime($validated['time_start']);
 
         if ($workSeconds <= 0) {
-            return back()
-                ->withErrors(['time_end' => 'Jam selesai harus lebih besar dari jam mulai'])
-                ->withInput();
+            throw ValidationException::withMessages([
+                'time_end' => 'Jam selesai harus lebih besar dari jam mulai.',
+            ]);
         }
 
         $workHours = round($workSeconds / 3600, 2);
 
         /**
-         * 5. HITUNG TARGET PRODUKSI
-         * Snapshot cycle time dari MASTER
+         * 4. SNAPSHOT CYCLE TIME (HANYA DARI MIRROR)
          */
         $cycleTimeSec = (int) $item->cycle_time_sec;
 
@@ -110,6 +111,9 @@ class ProductionController extends Controller
             ]);
         }
 
+        /**
+         * 5. HITUNG TARGET PRODUKSI
+         */
         $targetQty = intdiv($workSeconds, $cycleTimeSec);
 
         /**
@@ -122,16 +126,16 @@ class ProductionController extends Controller
             : 0;
 
         /**
-         * 7. SIMPAN KE FACT TABLE (SNAPSHOT)
-         * NO FK — KPI IMMUTABLE
+         * 7. SIMPAN KE FACT TABLE (IMMUTABLE KPI)
+         * NO FK — SNAPSHOT ONLY
          */
         ProductionLog::create([
             'production_date'     => $validated['production_date'],
             'shift'               => $validated['shift'],
 
-            'operator_code'       => $this->normalizeCode($validated['operator_code']),
-            'machine_code'        => $this->normalizeCode($validated['machine_code']),
-            'item_code'           => $this->normalizeCode($validated['item_code']),
+            'operator_code'       => $this->normalizeCode($operator->code),
+            'machine_code'        => $this->normalizeCode($machine->code),
+            'item_code'           => $this->normalizeCode($item->code),
 
             'time_start'          => $validated['time_start'],
             'time_end'            => $validated['time_end'],
@@ -146,7 +150,7 @@ class ProductionController extends Controller
 
         return redirect()
             ->back()
-            ->with('success', 'Data produksi berhasil disimpan');
+            ->with('success', 'Data produksi berhasil disimpan.');
     }
 
     /**

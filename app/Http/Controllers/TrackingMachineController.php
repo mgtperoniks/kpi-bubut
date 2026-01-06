@@ -4,30 +4,42 @@ namespace App\Http\Controllers;
 
 use App\Models\DailyKpiMachine;
 use App\Models\ProductionLog;
-use App\Models\MdMachine;
+
+// MASTER MIRROR (READ ONLY - SSOT)
+use App\Models\MdMachineMirror;
 
 class TrackingMachineController extends Controller
 {
     /**
-     * List KPI harian mesin
+     * ===============================
+     * LIST KPI HARIAN MESIN
+     * ===============================
      */
     public function index()
     {
-        // Ambil tanggal dari request atau fallback ke KPI terakhir
-        $date = request('date')
-            ?? DailyKpiMachine::max('kpi_date');
+        /**
+         * Ambil tanggal dari request
+         * fallback ke tanggal KPI terbaru
+         */
+        $date = request('date') ?? DailyKpiMachine::max('kpi_date');
 
         if (!$date) {
-            return back()->with('error', 'Tanggal tidak ditemukan');
+            return back()->with('error', 'Tanggal KPI tidak ditemukan.');
         }
 
-        // KPI mesin (SUMBER RESMI)
+        /**
+         * Data KPI mesin untuk tanggal tersebut
+         * (SUMBER RESMI KPI)
+         */
         $rows = DailyKpiMachine::where('kpi_date', $date)
             ->orderBy('machine_code')
             ->get();
 
-        // Mapping kode mesin → nama
-        $machineNames = MdMachine::pluck('name', 'code');
+        /**
+         * Mapping kode mesin -> nama mesin
+         * Mirror master (READ ONLY)
+         */
+        $machineNames = MdMachineMirror::pluck('name', 'code');
 
         return view('tracking.machine.index', [
             'rows'         => $rows,
@@ -37,17 +49,23 @@ class TrackingMachineController extends Controller
     }
 
     /**
-     * Detail KPI mesin per tanggal
+     * ===============================
+     * DETAIL KPI MESIN PER TANGGAL
+     * ===============================
      */
-    public function show(string $machine, string $date)
+    public function show(string $machineCode, string $date)
     {
-        // Summary KPI mesin
-        $summary = DailyKpiMachine::where('machine_code', $machine)
+        /**
+         * Summary KPI mesin (IMMUTABLE FACT)
+         */
+        $summary = DailyKpiMachine::where('machine_code', $machineCode)
             ->where('kpi_date', $date)
             ->firstOrFail();
 
-        // Detail aktivitas produksi (drill-down)
-        $activities = ProductionLog::where('machine_code', $machine)
+        /**
+         * Detail aktivitas produksi (FACT LOG)
+         */
+        $activities = ProductionLog::where('machine_code', $machineCode)
             ->where('production_date', $date)
             ->orderBy('time_start')
             ->get();
@@ -55,7 +73,7 @@ class TrackingMachineController extends Controller
         return view('tracking.machine.show', [
             'summary'    => $summary,
             'activities' => $activities,
-            'machine'    => $machine,
+            'machine'    => $machineCode,
             'date'       => $date,
         ]);
     }

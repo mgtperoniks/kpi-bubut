@@ -5,13 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\DowntimeLog;
 use Illuminate\Support\Facades\DB;
 
-// MASTER MIRROR
-use App\Models\MdMachine;
+// MASTER MIRROR (READ ONLY - SSOT)
+use App\Models\MdMachineMirror;
 
 class TrackingDowntimeController extends Controller
 {
     /**
-     * List & summary downtime per tanggal
+     * ===============================
+     * LIST & SUMMARY DOWNTIME PER TANGGAL
+     * ===============================
      */
     public function index()
     {
@@ -22,21 +24,23 @@ class TrackingDowntimeController extends Controller
         $date = request('date') ?? DowntimeLog::max('downtime_date');
 
         if (!$date) {
-            return back()->with('error', 'Tanggal downtime tidak ditemukan');
+            return back()->with('error', 'Tanggal downtime tidak ditemukan.');
         }
 
         /**
-         * List downtime (detail)
+         * LIST DOWNTIME (DETAIL EVENT)
+         * FACT TABLE — READ ONLY
          */
-        $list = DowntimeLog::whereDate('downtime_date', $date)
+        $list = DowntimeLog::where('downtime_date', $date)
             ->orderBy('machine_code')
-            ->orderBy('duration_minutes')
+            ->orderByDesc('duration_minutes')
             ->get();
 
         /**
-         * Summary downtime per mesin (total menit)
+         * SUMMARY DOWNTIME PER MESIN (TOTAL MENIT)
+         * AGGREGATE FACT
          */
-        $summary = DowntimeLog::whereDate('downtime_date', $date)
+        $summary = DowntimeLog::where('downtime_date', $date)
             ->select(
                 'machine_code',
                 DB::raw('SUM(duration_minutes) as total_minutes')
@@ -46,9 +50,10 @@ class TrackingDowntimeController extends Controller
             ->get();
 
         /**
-         * Mapping kode mesin → nama mesin
+         * Mapping kode mesin -> nama mesin
+         * Mirror master (READ ONLY)
          */
-        $machineNames = MdMachine::pluck('name', 'code');
+        $machineNames = MdMachineMirror::pluck('name', 'code');
 
         return view('downtime.index', [
             'list'         => $list,

@@ -3,13 +3,14 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
+
+// FACT TABLE
 use App\Models\RejectLog;
 
-// MASTER MIRROR (READ ONLY)
-use App\Models\MdOperator;
-use App\Models\MdMachine;
-use App\Models\MdItem;
+// MASTER MIRROR (READ ONLY - SSOT)
+use App\Models\MdItemMirror;
+use App\Models\MdMachineMirror;
+use App\Models\MdOperatorMirror;
 
 class RejectController extends Controller
 {
@@ -35,17 +36,17 @@ class RejectController extends Controller
     public function create()
     {
         return view('reject.input', [
-            'operators' => MdOperator::active()
-                ->orderBy('name')
-                ->get(),
+            'items' => MdItemMirror::where('status', 'active')
+                ->orderBy('code')
+                ->get(['code', 'name']),
 
-            'machines' => MdMachine::active()
-                ->orderBy('name')
-                ->get(),
+            'machines' => MdMachineMirror::where('status', 'active')
+                ->orderBy('code')
+                ->get(['code', 'name']),
 
-            'items' => MdItem::active()
-                ->orderBy('name')
-                ->get(),
+            'operators' => MdOperatorMirror::where('status', 'active')
+                ->orderBy('employment_seq')
+                ->get(['code', 'name']),
         ]);
     }
 
@@ -58,6 +59,7 @@ class RejectController extends Controller
     {
         /**
          * 1. VALIDASI INPUT DASAR
+         * Server = Source of Truth
          */
         $validated = $request->validate([
             'reject_date'   => 'required|date',
@@ -70,44 +72,32 @@ class RejectController extends Controller
         ]);
 
         /**
-         * 2. LOAD MASTER DATA (FAIL FAST)
-         * SSOT DEFENSIVE LAYER
+         * 2. LOAD MASTER MIRROR (FAIL FAST)
+         * Defensive Quality Layer
          */
-        $operator = MdOperator::where('code', $validated['operator_code'])->firstOrFail();
-        $machine  = MdMachine::where('code', $validated['machine_code'])->firstOrFail();
-        $item     = MdItem::where('code', $validated['item_code'])->firstOrFail();
+        $item = MdItemMirror::where('code', $validated['item_code'])
+            ->where('status', 'active')
+            ->firstOrFail();
+
+        $machine = MdMachineMirror::where('code', $validated['machine_code'])
+            ->where('status', 'active')
+            ->firstOrFail();
+
+        $operator = MdOperatorMirror::where('code', $validated['operator_code'])
+            ->where('status', 'active')
+            ->firstOrFail();
 
         /**
-         * 3. HARD STOP — MASTERDATA GUARD
-         * QUALITY KPI TIDAK BOLEH TERCEMAR
-         */
-        if ($operator->status !== 'active') {
-            throw ValidationException::withMessages([
-                'operator_code' => 'Operator inactive tidak boleh digunakan dalam reject.',
-            ]);
-        }
-
-        if ($machine->status !== 'active') {
-            throw ValidationException::withMessages([
-                'machine_code' => 'Machine inactive tidak boleh digunakan dalam reject.',
-            ]);
-        }
-
-        if ($item->status !== 'active') {
-            throw ValidationException::withMessages([
-                'item_code' => 'Item inactive tidak boleh digunakan dalam reject.',
-            ]);
-        }
-
-        /**
-         * 4. SIMPAN KE FACT TABLE
-         * Snapshot (NO FK)
+         * 3. SIMPAN KE FACT TABLE (REJECT SNAPSHOT)
+         * NO FK — TIDAK MENGUBAH KPI PRODUKSI
          */
         RejectLog::create([
             'reject_date'   => $validated['reject_date'],
-            'operator_code' => $this->normalizeCode($validated['operator_code']),
-            'machine_code'  => $this->normalizeCode($validated['machine_code']),
-            'item_code'     => $this->normalizeCode($validated['item_code']),
+
+            'operator_code' => $this->normalizeCode($operator->code),
+            'machine_code'  => $this->normalizeCode($machine->code),
+            'item_code'     => $this->normalizeCode($item->code),
+
             'reject_qty'    => $validated['reject_qty'],
             'reject_reason' => $validated['reject_reason'],
             'note'          => $validated['note'] ?? null,
@@ -115,7 +105,7 @@ class RejectController extends Controller
 
         return redirect()
             ->back()
-            ->with('success', 'Data reject berhasil disimpan');
+            ->with('success', 'Data reject berhasil disimpan.');
     }
 
     /**

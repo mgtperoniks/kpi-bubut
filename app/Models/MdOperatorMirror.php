@@ -7,6 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 class MdOperatorMirror extends Model
 {
     protected $table = 'md_operators_mirror';
+    protected $primaryKey = 'code';
+    public $incrementing = false;
+    protected $keyType = 'string';
+    public $timestamps = false;
 
     protected $fillable = [
         'code',
@@ -17,6 +21,4 @@ class MdOperatorMirror extends Model
         'source_updated_at',
         'last_sync_at',
     ];
-
-    public $timestamps = false;
 }

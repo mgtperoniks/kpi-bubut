@@ -5,13 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\DailyKpiOperator;
 use App\Models\ProductionLog;
 
-// MASTER MIRROR
-use App\Models\MdOperator;
+// MASTER MIRROR (READ ONLY - SSOT)
+use App\Models\MdOperatorMirror;
 
 class TrackingOperatorController extends Controller
 {
     /**
-     * List KPI harian operator (by date)
+     * ===============================
+     * LIST KPI HARIAN OPERATOR
+     * ===============================
      */
     public function index()
     {
@@ -22,7 +24,7 @@ class TrackingOperatorController extends Controller
         $date = request('date') ?? DailyKpiOperator::max('kpi_date');
 
         if (!$date) {
-            return back()->with('error', 'Tanggal KPI tidak ditemukan');
+            return back()->with('error', 'Tanggal KPI tidak ditemukan.');
         }
 
         /**
@@ -34,9 +36,9 @@ class TrackingOperatorController extends Controller
 
         /**
          * Mapping kode operator -> nama operator
-         * (mirror master, read-only)
+         * Mirror master (READ ONLY)
          */
-        $operatorNames = MdOperator::pluck('name', 'code');
+        $operatorNames = MdOperatorMirror::pluck('name', 'code');
 
         return view('tracking.operator.index', [
             'rows'          => $rows,
@@ -46,19 +48,21 @@ class TrackingOperatorController extends Controller
     }
 
     /**
-     * Detail KPI operator per tanggal
+     * ===============================
+     * DETAIL KPI OPERATOR PER TANGGAL
+     * ===============================
      */
     public function show(string $operatorCode, string $date)
     {
         /**
-         * Summary KPI
+         * Summary KPI (IMMUTABLE FACT)
          */
         $summary = DailyKpiOperator::where('operator_code', $operatorCode)
             ->where('kpi_date', $date)
             ->firstOrFail();
 
         /**
-         * Detail aktivitas produksi
+         * Detail aktivitas produksi (FACT LOG)
          */
         $activities = ProductionLog::where('operator_code', $operatorCode)
             ->where('production_date', $date)
@@ -66,7 +70,7 @@ class TrackingOperatorController extends Controller
             ->get();
 
         return view('tracking.operator.show', [
-            'summary'  => $summary,
+            'summary'    => $summary,
             'activities' => $activities,
         ]);
     }
