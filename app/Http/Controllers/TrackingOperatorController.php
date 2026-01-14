@@ -39,9 +39,22 @@ class TrackingOperatorController extends Controller
          */
         $operatorNames = MdOperatorMirror::pluck('name', 'code');
 
+        /**
+         * Mapping kode operator -> shift (ambil dari logs)
+         */
+        $shifts = ProductionLog::where('production_date', $date)
+            ->select('operator_code', 'shift')
+            ->distinct()
+            ->get()
+            ->groupBy('operator_code')
+            ->map(function ($items) {
+                return $items->pluck('shift')->implode(', ');
+            });
+
         return view('tracking.operator.index', [
             'rows' => $rows,
             'operatorNames' => $operatorNames,
+            'shifts' => $shifts,
             'date' => $date,
         ]);
     }
@@ -56,14 +69,16 @@ class TrackingOperatorController extends Controller
         /**
          * Summary KPI (IMMUTABLE FACT)
          */
-        $summary = DailyKpiOperator::where('operator_code', $operatorCode)
+        $summary = DailyKpiOperator::with('operator')
+            ->where('operator_code', $operatorCode)
             ->where('kpi_date', $date)
             ->firstOrFail();
 
         /**
          * Detail aktivitas produksi (FACT LOG)
          */
-        $activities = ProductionLog::where('operator_code', $operatorCode)
+        $activities = ProductionLog::with(['machine', 'item'])
+            ->where('operator_code', $operatorCode)
             ->where('production_date', $date)
             ->orderBy('time_start')
             ->get();
@@ -80,7 +95,9 @@ class TrackingOperatorController extends Controller
      */
     public function exportPdf(string $date)
     {
-        $rows = DailyKpiOperator::where('kpi_date', $date)
+        $rows = ProductionLog::with(['machine', 'item'])
+            ->where('production_date', $date)
+            ->orderBy('shift')
             ->orderBy('operator_code')
             ->get();
 
@@ -92,6 +109,8 @@ class TrackingOperatorController extends Controller
             'date' => $date,
         ]);
 
-        return $pdf->download('KPI-Operator-' . $date . '.pdf');
+        $pdf->setPaper('A4', 'landscape'); // Landscape for better width
+
+        return $pdf->download('KPI-Harian-' . $date . '.pdf');
     }
 }

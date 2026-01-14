@@ -149,6 +149,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/search/operators', [\App\Http\Controllers\AutocompleteController::class, 'searchOperators'])->name('search.operators');
         Route::get('/search/machines', [\App\Http\Controllers\AutocompleteController::class, 'searchMachines'])->name('search.machines');
         Route::get('/search/heat-numbers', [\App\Http\Controllers\AutocompleteController::class, 'searchHeatNumbers'])->name('search.heat_numbers');
+        Route::get('/item-stats/{code}', [\App\Http\Controllers\AutocompleteController::class, 'getItemStats'])->name('item.stats');
 
         Route::post('/sync', [\App\Http\Controllers\ManualSyncController::class, 'sync'])->name('manual.sync');
 

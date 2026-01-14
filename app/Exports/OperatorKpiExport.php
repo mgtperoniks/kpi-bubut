@@ -17,25 +17,43 @@ class OperatorKpiExport implements FromCollection, WithHeadings
 
     public function collection()
     {
-        return DailyKpiOperator::where('kpi_date', $this->date)
-            ->select(
-                'operator_code',
-                'total_work_hours',
-                'total_target_qty',
-                'total_actual_qty',
-                'kpi_percent'
-            )
-            ->get();
+        return \App\Models\ProductionLog::with(['machine', 'item'])
+            ->where('production_date', $this->date)
+            ->orderBy('shift')
+            ->orderBy('operator_code')
+            ->get()
+            ->map(function ($row) {
+                // Determine operator name
+                $opName = \App\Models\MdOperatorMirror::where('code', $row->operator_code)->value('name') ?? $row->operator_code;
+                
+                // Determine Item Name + Size
+                $itemName = $row->item->name ?? $row->item_code;
+                if (!empty($row->size)) {
+                    $itemName .= ' (' . $row->size . ')';
+                }
+
+                return [
+                    'shift' => $row->shift,
+                    'operator' => $opName,
+                    'machine' => $row->machine_code, // Keep code as requested for machine
+                    'item' => $itemName,
+                    'target' => $row->target_qty,
+                    'actual' => $row->actual_qty,
+                    'kpi' => $row->achievement_percent . '%',
+                ];
+            });
     }
 
     public function headings(): array
     {
         return [
+            'SF',
             'Operator',
-            'Jam Kerja',
+            'Mesin',
+            'Item & Size',
             'Target',
             'Aktual',
-            'KPI (%)',
+            'KPI',
         ];
     }
 }

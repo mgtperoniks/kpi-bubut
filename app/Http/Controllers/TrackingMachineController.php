@@ -40,9 +40,22 @@ class TrackingMachineController extends Controller
          */
         $machineNames = MdMachineMirror::pluck('name', 'code');
 
+        /**
+         * Mapping kode mesin -> shift
+         */
+        $shifts = ProductionLog::where('production_date', $date)
+            ->select('machine_code', 'shift')
+            ->distinct()
+            ->get()
+            ->groupBy('machine_code')
+            ->map(function ($items) {
+                return $items->pluck('shift')->implode(', ');
+            });
+
         return view('tracking.machine.index', [
             'rows' => $rows,
             'machineNames' => $machineNames,
+            'shifts' => $shifts,
             'date' => $date,
         ]);
     }
@@ -57,14 +70,16 @@ class TrackingMachineController extends Controller
         /**
          * Summary KPI mesin (IMMUTABLE FACT)
          */
-        $summary = DailyKpiMachine::where('machine_code', $machineCode)
+        $summary = DailyKpiMachine::with('machine')
+            ->where('machine_code', $machineCode)
             ->where('kpi_date', $date)
             ->firstOrFail();
 
         /**
          * Detail aktivitas produksi (FACT LOG)
          */
-        $activities = ProductionLog::where('machine_code', $machineCode)
+        $activities = ProductionLog::with(['operator', 'item'])
+            ->where('machine_code', $machineCode)
             ->where('production_date', $date)
             ->orderBy('time_start')
             ->get();
@@ -83,8 +98,10 @@ class TrackingMachineController extends Controller
      */
     public function exportPdf(string $date)
     {
-        $rows = DailyKpiMachine::where('kpi_date', $date)
+        $rows = ProductionLog::with(['operator', 'item'])
+            ->where('production_date', $date)
             ->orderBy('machine_code')
+            ->orderBy('shift')
             ->get();
 
         $machineNames = MdMachineMirror::pluck('name', 'code');
@@ -94,6 +111,8 @@ class TrackingMachineController extends Controller
             'machineNames' => $machineNames,
             'date' => $date,
         ]);
+
+        $pdf->setPaper('A4', 'landscape');
 
         return $pdf->download('KPI-Mesin-' . $date . '.pdf');
     }

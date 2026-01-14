@@ -20,5 +20,9 @@ class DailyKpiOperator extends Model
         'total_actual_qty',
         'kpi_percent',
     ];
+    public function operator()
+    {
+        return $this->belongsTo(MdOperatorMirror::class, 'operator_code', 'code');
+    }
 }
 

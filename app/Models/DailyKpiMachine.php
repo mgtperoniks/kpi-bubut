@@ -20,5 +20,14 @@ class DailyKpiMachine extends Model
         'total_actual_qty',
         'kpi_percent',
     ];
+    public function getMachineCodeAttribute($value)
+    {
+        return strtoupper($value);
+    }
+
+    public function machine()
+    {
+        return $this->belongsTo(MdMachineMirror::class, 'machine_code', 'code');
+    }
 }
 

@@ -20,4 +20,24 @@ class DowntimeLog extends Model
         'duration_minutes',
         'note',
     ];
+
+    public function getMachineCodeAttribute($value)
+    {
+        return strtoupper($value);
+    }
+
+    public function getOperatorCodeAttribute($value)
+    {
+        return strtoupper($value);
+    }
+
+    public function machine()
+    {
+        return $this->belongsTo(MdMachineMirror::class, 'machine_code', 'code');
+    }
+
+    public function operator()
+    {
+        return $this->belongsTo(MdOperatorMirror::class, 'operator_code', 'code');
+    }
 }

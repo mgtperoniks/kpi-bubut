@@ -102,8 +102,35 @@ class AutocompleteController extends Controller
                     ->orWhere('item_name', 'like', "%{$query}%");
             })
             ->limit(20)
-            ->get(['heat_number', 'item_code', 'item_name']);
+            ->get(['heat_number', 'item_code', 'item_name', 'size', 'customer', 'line']);
 
         return response()->json($heatNumbers);
+    }
+
+    /**
+     * Get Item Statistics (Average Cycle Time)
+     */
+    public function getItemStats(string $code)
+    {
+        // Calculate average cycle time from ProductionLog
+        $avgSeconds = \App\Models\ProductionLog::where('item_code', $code)
+            ->where('cycle_time_used_sec', '>', 0)
+            ->avg('cycle_time_used_sec');
+
+        if (!$avgSeconds) {
+            return response()->json([
+                'average_seconds' => 0,
+                'formatted' => 'Belum ada data'
+            ]);
+        }
+
+        $avgSeconds = round($avgSeconds);
+        $minutes = floor($avgSeconds / 60);
+        $seconds = $avgSeconds % 60;
+
+        return response()->json([
+            'average_seconds' => $avgSeconds,
+            'formatted' => "{$minutes}m {$seconds}s"
+        ]);
     }
 }

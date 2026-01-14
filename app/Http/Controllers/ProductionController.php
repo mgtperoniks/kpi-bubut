@@ -64,6 +64,9 @@ class ProductionController extends Controller
             'time_start' => 'required|date_format:H:i',
             'time_end' => 'required|date_format:H:i|after:time_start',
 
+            'cycle_time_minutes' => 'required|integer|min:0',
+            'cycle_time_seconds' => 'required|integer|min:0|max:59',
+
             'actual_qty' => 'required|integer|min:0',
         ]);
 
@@ -98,13 +101,14 @@ class ProductionController extends Controller
         $workHours = round($workSeconds / 3600, 2);
 
         /**
-         * 4. SNAPSHOT CYCLE TIME (HANYA DARI MIRROR)
+         * 4. HITUNG CYCLE TIME MANUAL
+         * User input: Minutes & Seconds -> Total Seconds
          */
-        $cycleTimeSec = (int) $item->cycle_time_sec;
+        $cycleTimeSec = ($validated['cycle_time_minutes'] * 60) + $validated['cycle_time_seconds'];
 
         if ($cycleTimeSec <= 0) {
             throw ValidationException::withMessages([
-                'item_code' => 'Cycle time item tidak valid.',
+                'cycle_time_seconds' => 'Total Cycle Time tidak boleh 0 detik.',
             ]);
         }
 
@@ -122,6 +126,12 @@ class ProductionController extends Controller
             ? round(($actualQty / $targetQty) * 100, 2)
             : 0;
 
+        // Fetch Heat Number details if exists
+        $heatNumberDetails = null;
+        if (!empty($validated['heat_number'])) {
+            $heatNumberDetails = \App\Models\MdHeatNumberMirror::where('heat_number', $validated['heat_number'])->first();
+        }
+
         /**
          * 7. SIMPAN KE FACT TABLE (IMMUTABLE KPI)
          * NO FK — SNAPSHOT ONLY
@@ -134,12 +144,15 @@ class ProductionController extends Controller
             'machine_code' => $this->normalizeCode($machine->code),
             'item_code' => $this->normalizeCode($item->code),
             'heat_number' => $validated['heat_number'] ?? null,
+            'size' => $heatNumberDetails ? $heatNumberDetails->size : null,
+            'customer' => $heatNumberDetails ? $heatNumberDetails->customer : null,
+            'line' => $heatNumberDetails ? $heatNumberDetails->line : null,
 
             'time_start' => $validated['time_start'],
             'time_end' => $validated['time_end'],
             'work_hours' => $workHours,
 
-            // SNAPSHOT NILAI KRITIS
+            // SNAPSHOT NILAI KRITIS (MANUAL INPUT)
             'cycle_time_used_sec' => $cycleTimeSec,
             'target_qty' => $targetQty,
             'actual_qty' => $actualQty,

@@ -4,8 +4,8 @@
     <title>Laporan Downtime</title>
     <style>
         body {
-            font-family: sans-serif;
-            font-size: 10pt;
+            font-family: Arial, sans-serif;
+            font-size: 9pt;
         }
         .header {
             text-align: center;
@@ -18,77 +18,110 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
         }
         th, td {
-            border: 1px solid #000;
-            padding: 5px;
+            border: 1px solid #333;
+            padding: 4px 6px;
+            vertical-align: middle;
         }
         th {
-            background-color: #f0f0f0;
+            background-color: #f2f2f2;
+            text-align: center;
+            font-weight: bold;
         }
-        .text-right {
-            text-align: right;
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        
+        /* Layout for Signatures */
+        .signatures {
+            margin-top: 30px;
+            width: 100%;
+            border: none;
+        }
+        .signatures td {
+            border: none;
+            text-align: center;
+            vertical-align: top;
+            width: 25%;
+            padding-top: 50px;
+        }
+        .sign-title {
+            font-weight: bold;
+            margin-bottom: 60px;
+            display: block;
+        }
+        .sign-name {
+            border-top: 1px solid #333;
+            display: inline-block;
+            width: 80%;
+            padding-top: 5px;
         }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h2>Laporan Downtime</h2>
-        <p>Tanggal: {{ $date }}</p>
+        <h2>Laporan Downtime Harian</h2>
+        <p>Tanggal: {{ \Carbon\Carbon::parse($date)->locale('id')->isoFormat('dddd, D MMMM Y') }}</p>
     </div>
 
-    <h3>Ringkasan per Mesin</h3>
-    <table>
-        <thead>
-            <tr>
-                <th>No</th>
-                <th>Mesin</th>
-                <th class="text-right">Total Downtime (menit)</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse ($summary as $index => $row)
-                <tr>
-                    <td style="text-align: center; width: 5%;">{{ $index + 1 }}</td>
-                    <td>{{ $machineNames[$row->machine_code] ?? $row->machine_code }}</td>
-                    <td class="text-right">{{ $row->total_minutes }}</td>
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="3" style="text-align: center;">Tidak ada data downtime.</td>
-                </tr>
-            @endforelse
-        </tbody>
-    </table>
-
-    <h3>Detail Downtime</h3>
     <table>
         <thead>
             <tr>
                 <th style="width: 5%">No</th>
+                <th style="width: 15%">Mesin</th>
                 <th style="width: 20%">Operator</th>
-                <th style="width: 20%">Mesin</th>
-                <th style="width: 15%" class="text-right">Durasi (menit)</th>
-                <th style="width: 40%">Catatan</th>
+                <th style="width: 10%">Durasi</th>
+                <th style="width: 50%">Catatan Masalah</th>
             </tr>
         </thead>
         <tbody>
             @forelse ($list as $index => $row)
                 <tr>
-                    <td style="text-align: center;">{{ $index + 1 }}</td>
-                    <td>{{ $row->operator_code }}</td>
-                    <td>{{ $machineNames[$row->machine_code] ?? $row->machine_code }}</td>
-                    <td class="text-right">{{ $row->duration_minutes }}</td>
-                    <td>{{ $row->note }}</td>
+                    <td class="text-center">{{ $index + 1 }}</td>
+                    <td>
+                        {{ $row->machine->name ?? $row->machine_code }}
+                    </td>
+                    <td>
+                        {{ $row->operator->name ?? $row->operator_code }}
+                    </td>
+                    <td class="text-right" style="font-weight: bold;">
+                        {{ $row->duration_minutes }} Min
+                    </td>
+                    <td>
+                        {{ $row->note }}
+                    </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="5" style="text-align: center;">Tidak ada detail downtime.</td>
+                    <td colspan="5" class="text-center">
+                        Tidak ada data downtime untuk tanggal ini.
+                    </td>
                 </tr>
             @endforelse
         </tbody>
+    </table>
+
+    <!-- Signature Section -->
+    <table class="signatures">
+        <tr>
+            <td>
+                <span class="sign-title">Admin</span>
+                <span class="sign-name">( ....................... )</span>
+            </td>
+            <td>
+                <span class="sign-title">SPV Shift 1</span>
+                <span class="sign-name">( ....................... )</span>
+            </td>
+            <td>
+                <span class="sign-title">SPV Shift 2</span>
+                <span class="sign-name">( ....................... )</span>
+            </td>
+            <td>
+                <span class="sign-title">SPV Shift 3</span>
+                <span class="sign-name">( ....................... )</span>
+            </td>
+        </tr>
     </table>
 
 </body>

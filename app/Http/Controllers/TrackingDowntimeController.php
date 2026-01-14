@@ -32,7 +32,8 @@ class TrackingDowntimeController extends Controller
          * LIST DOWNTIME (DETAIL EVENT)
          * FACT TABLE — READ ONLY
          */
-        $list = DowntimeLog::where('downtime_date', $date)
+        $list = DowntimeLog::with(['machine', 'operator'])
+            ->where('downtime_date', $date)
             ->orderBy('machine_code')
             ->orderByDesc('duration_minutes')
             ->get();
@@ -70,7 +71,8 @@ class TrackingDowntimeController extends Controller
      */
     public function exportPdf(string $date)
     {
-        $list = DowntimeLog::where('downtime_date', $date)
+        $list = DowntimeLog::with(['machine', 'operator'])
+            ->where('downtime_date', $date)
             ->orderBy('machine_code')
             ->orderByDesc('duration_minutes')
             ->get();
@@ -92,6 +94,8 @@ class TrackingDowntimeController extends Controller
             'machineNames' => $machineNames,
             'date'         => $date,
         ]);
+
+        $pdf->setPaper('A4', 'landscape');
 
         return $pdf->download('Laporan-Downtime-'.$date.'.pdf');
     }

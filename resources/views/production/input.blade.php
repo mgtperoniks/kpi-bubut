@@ -3,7 +3,7 @@
 @section('title', 'Input Hasil Produksi')
 
 @section('content')
-    <div x-data="productionForm()" class="max-w-3xl mx-auto pb-24">
+    <div x-data="productionForm()" class="max-w-4xl mx-auto pb-24">
 
         {{-- Header --}}
         <div class="mb-8">
@@ -15,24 +15,24 @@
         <form action="{{ route('production.store') }}" method="POST" class="space-y-6">
             @csrf
 
-            {{-- Section 1: Basic Info --}}
+            {{-- Section 1: Waktu & Shift ( 1 Row, 4 Columns ) --}}
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                 <div class="flex items-center gap-2 mb-6 border-b border-slate-50 pb-4">
                     <span class="material-icons-round text-blue-500">calendar_today</span>
                     <h2 class="font-bold text-lg text-slate-700">Waktu & Shift</h2>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div class="grid grid-cols-4 gap-4">
                     {{-- Tanggal --}}
                     <div class="space-y-1.5">
-                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tanggal</label>
-                        <input type="date" name="production_date" value="{{ date('Y-m-d') }}"
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tanggal</label>
+                        <input type="date" name="production_date" value="{{ date('Y-m-d', strtotime('-1 day')) }}"
                             class="w-full bg-slate-50 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm p-3 font-medium text-slate-700">
                     </div>
 
                     {{-- Shift --}}
                     <div class="space-y-1.5">
-                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Shift</label>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Shift</label>
                         <select name="shift" required
                             class="w-full bg-slate-50 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm p-3 font-medium text-slate-700">
                             <option value="1">Shift 1 (07:00-15:00)</option>
@@ -42,152 +42,188 @@
                         </select>
                     </div>
 
-                    {{-- Jam Kerja --}}
+                    {{-- Waktu Mulai --}}
                     <div class="space-y-1.5">
-                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Waktu Mulai</label>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Waktu Mulai</label>
                         <input type="time" name="time_start" x-model="timeStart" @change="calculateTarget" required
                             class="w-full bg-slate-50 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm p-3 font-medium text-slate-700">
                     </div>
+
+                    {{-- Waktu Selesai --}}
                     <div class="space-y-1.5">
-                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Waktu Selesai</label>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Waktu Selesai</label>
                         <input type="time" name="time_end" x-model="timeEnd" @change="calculateTarget" required
                             class="w-full bg-slate-50 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm p-3 font-medium text-slate-700">
                     </div>
                 </div>
             </div>
 
-            {{-- Section 2: Resources (Autocomplete) --}}
+            {{-- Section 2: Sumber Daya ( 1 Row, 2 Columns ) --}}
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                 <div class="flex items-center gap-2 mb-6 border-b border-slate-50 pb-4">
                     <span class="material-icons-round text-blue-500">group_work</span>
                     <h2 class="font-bold text-lg text-slate-700">Sumber Daya</h2>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    {{-- Operator Autocomplete --}}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {{-- Operator Search --}}
                     <div class="space-y-1.5 relative" @click.outside="showOperatorSuggestions = false">
-                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Operator</label>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Operator</label>
                         <div class="relative">
                             <input type="text" x-model="operatorSearch" @input.debounce.300ms="searchOperators"
-                                placeholder="Ketik Nama/Kode Operator..."
+                                placeholder="Cari Operator..."
                                 class="w-full bg-slate-50 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm p-3 font-medium text-slate-700 pl-10">
-                            <span
-                                class="material-icons-round absolute left-3 top-3 text-slate-400 text-lg">person_search</span>
-
-                            {{-- Hidden Input for Real Value --}}
+                            <span class="material-icons-round absolute left-3 top-3 text-slate-400 text-lg">person_search</span>
                             <input type="hidden" name="operator_code" x-model="selectedOperatorCode" required>
                         </div>
-
-                        {{-- Suggestions Dropdown --}}
+                        {{-- Operator Suggestions --}}
                         <div x-show="showOperatorSuggestions && operatorList.length > 0"
-                            class="absolute z-10 w-full bg-white border border-slate-200 rounded-xl shadow-lg mt-1 max-h-60 overflow-y-auto"
-                            style="display: none;">
+                             class="absolute z-10 w-full bg-white border border-slate-200 rounded-xl shadow-lg mt-1 max-h-60 overflow-y-auto"
+                             style="display: none;">
                             <template x-for="op in operatorList" :key="op.code">
-                                <div @click="selectOperator(op)"
-                                    class="p-3 hover:bg-blue-50 cursor-pointer border-b border-slate-50 last:border-none">
+                                <div @click="selectOperator(op)" class="p-3 hover:bg-blue-50 cursor-pointer border-b border-slate-50 last:border-none">
                                     <p class="text-sm font-bold text-slate-700" x-text="op.name"></p>
                                     <p class="text-xs text-slate-400" x-text="op.code"></p>
                                 </div>
                             </template>
                         </div>
-                        {{-- Selected Indication --}}
-                        <div x-show="selectedOperatorName"
-                            class="text-xs text-emerald-600 font-bold flex items-center gap-1 mt-1">
+                        <div x-show="selectedOperatorName" class="text-xs text-emerald-600 font-bold flex items-center gap-1 mt-1">
                             <span class="material-icons-round text-sm">check_circle</span>
                             <span x-text="selectedOperatorName"></span>
                         </div>
                     </div>
 
-                    {{-- Mesin (Standard Select for now, list is small) --}}
-                    {{-- Mesin (Autocomplete) --}}
+                    {{-- Mesin Search --}}
                     <div class="space-y-1.5 relative" @click.outside="showMachineSuggestions = false">
-                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Mesin</label>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Mesin</label>
                         <div class="relative">
                             <input type="text" x-model="machineSearch" @input.debounce.300ms="searchMachines"
                                 placeholder="Cari Mesin..."
                                 class="w-full bg-slate-50 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm p-3 font-medium text-slate-700 pl-10"
                                 autocomplete="off">
-                            <span
-                                class="material-icons-round absolute left-3 top-3 text-slate-400 text-lg">precision_manufacturing</span>
+                            <span class="material-icons-round absolute left-3 top-3 text-slate-400 text-lg">precision_manufacturing</span>
                             <input type="hidden" name="machine_code" x-model="selectedMachineCode" required>
                         </div>
-
-                        {{-- Suggestions --}}
-                        <div x-show="showMachineSuggestions && machineList.length > 0"
-                            class="absolute z-10 w-full bg-white border border-slate-200 rounded-xl shadow-lg mt-1 max-h-60 overflow-y-auto"
-                            style="display: none;">
-                            <template x-for="machine in machineList" :key="machine.code">
-                                <div @click="selectMachine(machine)"
-                                    class="p-3 hover:bg-blue-50 cursor-pointer border-b border-slate-50 last:border-none">
-                                    <p class="text-sm font-bold text-slate-700" x-text="machine.name"></p>
-                                    <div class="flex gap-2 text-xs text-slate-400">
-                                        <span x-text="machine.code"></span>
-                                        <span x-show="machine.line_code" x-text="'• Line: ' + machine.line_code"></span>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
+                        {{-- Machine Suggestions --}}
+                         <div x-show="showMachineSuggestions && machineList.length > 0"
+                             class="absolute z-10 w-full bg-white border border-slate-200 rounded-xl shadow-lg mt-1 max-h-60 overflow-y-auto"
+                             style="display: none;">
+                             <template x-for="machine in machineList" :key="machine.code">
+                                 <div @click="selectMachine(machine)"
+                                     class="p-3 hover:bg-blue-50 cursor-pointer border-b border-slate-50 last:border-none">
+                                     <p class="text-sm font-bold text-slate-700" x-text="machine.name"></p>
+                                     <div class="flex gap-2 text-xs text-slate-400">
+                                         <span x-text="machine.code"></span>
+                                         <span x-show="machine.line_code" x-text="'• Line: ' + machine.line_code"></span>
+                                     </div>
+                                 </div>
+                             </template>
+                         </div>
                     </div>
                 </div>
             </div>
 
-            {{-- Section 3: Item & Production --}}
+            {{-- Section 3: Item & Hasil --}}
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                 <div class="flex items-center gap-2 mb-6 border-b border-slate-50 pb-4">
                     <span class="material-icons-round text-blue-500">inventory_2</span>
                     <h2 class="font-bold text-lg text-slate-700">Item & Hasil</h2>
                 </div>
 
-                <div class="space-y-5">
-                    {{-- Heat Number Autocomplete --}}
-                    <div class="space-y-1.5 relative" @click.outside="showHeatNumberSuggestions = false">
-                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Cari Heat Number</label>
-                        <div class="relative">
-                            <input type="text" x-model="heatNumberSearch" @input.debounce.300ms="searchHeatNumbers"
-                                placeholder="Cth: A210012502..."
-                                class="w-full bg-slate-50 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm p-3 font-medium text-slate-700 pl-10"
-                                autocomplete="off">
-                            <span class="material-icons-round absolute left-3 top-3 text-slate-400 text-lg">qr_code</span>
-                            <input type="hidden" name="heat_number" x-model="selectedHeatNumber">
-                            <input type="hidden" name="item_code" x-model="selectedItemCode" required>
-                        </div>
-
-                        {{-- Suggestions --}}
-                        <div x-show="showHeatNumberSuggestions && heatNumberList.length > 0"
-                            class="absolute z-10 w-full bg-white border border-slate-200 rounded-xl shadow-lg mt-1 max-h-60 overflow-y-auto"
-                            style="display: none;">
-                            <template x-for="hn in heatNumberList" :key="hn.heat_number">
-                                <div @click="selectHeatNumber(hn)"
-                                    class="p-3 hover:bg-blue-50 cursor-pointer border-b border-slate-50 last:border-none">
-                                    <p class="text-sm font-bold text-slate-700" x-text="hn.heat_number"></p>
-                                    <p class="text-xs text-slate-400" x-text="hn.item_name"></p>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-
-                    {{-- Item Info (Readonly) --}}
+                <div class="space-y-6">
+                    {{-- Row 1: Search HN & Nama Barang (2 Columns) --}}
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         {{-- Heat Number Search --}}
+                        <div class="space-y-1.5 relative" @click.outside="showHeatNumberSuggestions = false">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Cari Heat Number</label>
+                            <div class="relative">
+                                <input type="text" x-model="heatNumberSearch" @input.debounce.300ms="searchHeatNumbers"
+                                    placeholder="Scan/Ketik Heat Number..."
+                                    class="w-full bg-slate-50 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm p-3 font-medium text-slate-700 pl-10"
+                                    autocomplete="off">
+                                <span class="material-icons-round absolute left-3 top-3 text-slate-400 text-lg">qr_code</span>
+                                <input type="hidden" name="heat_number" x-model="selectedHeatNumber">
+                                <input type="hidden" name="item_code" x-model="selectedItemCode" required>
+                            </div>
+                            <div x-show="showHeatNumberSuggestions && heatNumberList.length > 0"
+                                class="absolute z-10 w-full bg-white border border-slate-200 rounded-xl shadow-lg mt-1 max-h-60 overflow-y-auto"
+                                style="display: none;">
+                                <template x-for="hn in heatNumberList" :key="hn.heat_number">
+                                    <div @click="selectHeatNumber(hn)" class="p-3 hover:bg-blue-50 cursor-pointer border-b border-slate-50 last:border-none">
+                                        <p class="text-sm font-bold text-slate-700" x-text="hn.heat_number"></p>
+                                        <p class="text-xs text-slate-400" x-text="hn.item_name"></p>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                         {{-- Nama Barang (Readonly) --}}
                         <div class="space-y-1.5">
-                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Nama Barang</label>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Nama Barang</label>
                             <input type="text" :value="selectedItemName" readonly
                                 class="w-full bg-slate-100 border-transparent rounded-xl text-sm p-3 font-medium text-slate-500 cursor-not-allowed"
                                 placeholder="-">
                         </div>
+                    </div>
+
+                    {{-- Row 2: Size, Line, Customer (3 Columns) --}}
+                    <div class="grid grid-cols-3 gap-4">
                         <div class="space-y-1.5">
-                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Cycle Time
-                                (Sec)</label>
-                            <input type="text" :value="cycleTime" readonly
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Size</label>
+                            <input type="text" :value="selectedSize" readonly
                                 class="w-full bg-slate-100 border-transparent rounded-xl text-sm p-3 font-medium text-slate-500 cursor-not-allowed"
-                                placeholder="0">
+                                placeholder="-">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Line</label>
+                            <input type="text" :value="selectedLine" readonly
+                                class="w-full bg-slate-100 border-transparent rounded-xl text-sm p-3 font-medium text-slate-500 cursor-not-allowed"
+                                placeholder="-">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Customer</label>
+                            <input type="text" :value="selectedCustomer" readonly
+                                class="w-full bg-slate-100 border-transparent rounded-xl text-sm p-3 font-medium text-slate-500 cursor-not-allowed"
+                                placeholder="-">
                         </div>
                     </div>
 
-                    {{-- Calculation Grid --}}
+                     {{-- Row 3: Cycle Time, Target, Hasil (3 Columns) --}}
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {{-- Cycle Time (Manual) --}}
+                        <div class="space-y-1.5">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">Cycle Time (Manual)</label>
+                            <div class="flex items-center gap-2 mb-1" x-show="avgCycleTimeText" x-transition>
+                                <div class="bg-blue-50 border border-blue-100 text-blue-600 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 w-full">
+                                    <span class="material-icons-round text-sm">history</span>
+                                    <span>Rata-rata: <span x-text="avgCycleTimeText" class="font-bold"></span></span>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div class="relative">
+                                    <input type="number" name="cycle_time_minutes" x-model="cycleTimeMinutes" @input="calculateTarget"
+                                        required min="0"
+                                        class="w-full bg-white border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm p-3 pr-14 font-medium text-slate-700"
+                                        placeholder="0">
+                                    <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                        <span class="text-xs font-bold text-slate-400 uppercase">Menit</span>
+                                    </div>
+                                </div>
+                                <div class="relative">
+                                    <input type="number" name="cycle_time_seconds" x-model="cycleTimeSeconds" @input="calculateTarget"
+                                        required min="0" max="59"
+                                        class="w-full bg-white border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm p-3 pr-14 font-medium text-slate-700"
+                                        placeholder="0">
+                                    <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                        <span class="text-xs font-bold text-slate-400 uppercase">Detik</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         {{-- Target (Auto) --}}
                         <div class="space-y-1.5">
-                            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Target (Auto)</label>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Target (Auto)</label>
                             <input type="number" readonly x-model="targetQty"
                                 class="w-full bg-slate-100 border-transparent rounded-xl text-center font-bold text-slate-600 text-lg p-3 cursor-not-allowed">
                             <p class="text-[10px] text-center text-slate-400">Berdasarkan Cycle Time</p>
@@ -195,25 +231,26 @@
 
                         {{-- Hasil (Manual) --}}
                         <div class="space-y-1.5">
-                            <label class="text-xs font-bold text-blue-600 uppercase tracking-wider">Hasil (OK)</label>
+                            <label class="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Hasil (OK)</label>
                             <input type="number" name="actual_qty" x-model="actualQty" @input="calculateAchievement"
                                 required min="0"
                                 class="w-full bg-white border-blue-300 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 text-center font-bold text-blue-700 text-lg p-3"
                                 placeholder="0">
                         </div>
-
-                        {{-- Achievement (Auto) --}}
-                        <div class="space-y-1.5">
-                            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Capaian</label>
-                            <div class="w-full rounded-xl text-center font-bold text-lg p-3 border" :class="{
-                                                    'bg-emerald-50 text-emerald-600 border-emerald-200': achievement >= 100,
-                                                    'bg-amber-50 text-amber-600 border-amber-200': achievement >= 80 && achievement < 100,
-                                                    'bg-red-50 text-red-600 border-red-200': achievement < 80
-                                                }">
-                                <span x-text="achievement + '%'">0%</span>
-                            </div>
+                    </div>
+                    
+                     {{-- Capaian Row --}}
+                     <div class="space-y-1.5 mt-2">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Capaian</label>
+                        <div class="w-full rounded-xl text-center font-bold text-lg p-3 border" :class="{
+                                                'bg-emerald-50 text-emerald-600 border-emerald-200': achievement >= 100,
+                                                'bg-amber-50 text-amber-600 border-amber-200': achievement >= 80 && achievement < 100,
+                                                'bg-red-50 text-red-600 border-red-200': achievement < 80
+                                            }">
+                            <span x-text="achievement + '%'">0%</span>
                         </div>
                     </div>
+
                 </div>
             </div>
 
@@ -234,7 +271,7 @@
                 </button>
             @endif
 
-            {{-- Session Messages --}}
+             {{-- Session Messages --}}
             @if(session('success'))
                 <div class="bg-green-100 border border-green-200 text-green-700 p-4 rounded-xl flex items-center gap-2">
                     <span class="material-icons-round">check_circle</span>
@@ -266,13 +303,26 @@
                 // Item
                 selectedItemCode: '',
                 selectedItemName: '',
-                cycleTime: 0,
+                selectedSize: '',
+                selectedLine: '',
+                selectedCustomer: '',
+                
+                // Cycle Time Manual
+                cycleTimeMinutes: '',
+                cycleTimeSeconds: '',
 
                 // Heat Number
                 heatNumberSearch: '',
                 selectedHeatNumber: '',
                 heatNumberList: [],
+                // Heat Number
+                heatNumberSearch: '',
+                selectedHeatNumber: '',
+                heatNumberList: [],
                 showHeatNumberSuggestions: false,
+
+                // Stats
+                avgCycleTimeText: '',
 
                 // Operator Search
                 operatorSearch: '',
@@ -309,20 +359,27 @@
                     this.heatNumberSearch = hn.heat_number;
                     this.selectedItemCode = hn.item_code;
                     this.selectedItemName = hn.item_name;
+                    this.selectedSize = hn.size || '-';
+                    this.selectedCustomer = hn.customer || '-';
+                    this.selectedLine = hn.line || '-';
+                    this.selectedLine = hn.line || '-';
                     this.showHeatNumberSuggestions = false;
 
-                    // We might need to fetch item cycle time from mirror if not included in Heat Number selection
-                    this.fetchItemDetails(hn.item_code);
+                    // Fetch Item Stats for Reference
+                    this.fetchItemStats(hn.item_code);
                 },
 
-                async fetchItemDetails(itemCode) {
-                    // Quick way to get cycle time for the selected item
-                    const res = await fetch(`{{ route('api.search.items') }}?q=${encodeURIComponent(itemCode)}&exact=1`);
-                    const data = await res.json();
-                    if (data.length > 0) {
-                        this.cycleTime = data[0].cycle_time_sec;
+                async fetchItemStats(itemCode) {
+                    this.avgCycleTimeText = 'Loading...';
+                    try {
+                        const res = await fetch(`{{ url('/api/item-stats') }}/${itemCode}`);
+                        const data = await res.json();
+                        this.avgCycleTimeText = data.formatted;
+                        
+                        // Optional: Auto-fill if empty? For now, just reference.
+                    } catch (e) {
+                        this.avgCycleTimeText = '';
                     }
-                    this.calculateTarget();
                 },
 
                 async searchOperators() {
@@ -336,7 +393,6 @@
                     this.selectedOperatorCode = op.code;
                     this.selectedOperatorName = op.name;
                     this.operatorSearch = op.name; // Display Name nice
-                    this.showOperatorSuggestions = false;
                     this.showOperatorSuggestions = false;
                 },
 
@@ -353,7 +409,12 @@
                 },
 
                 calculateTarget() {
-                    if (!this.timeStart || !this.timeEnd || !this.cycleTime || this.cycleTime <= 0) {
+                    // Calculate Total Cycle Time in Seconds
+                    const mins = parseInt(this.cycleTimeMinutes) || 0;
+                    const secs = parseInt(this.cycleTimeSeconds) || 0;
+                    const totalCycleTimeSec = (mins * 60) + secs;
+
+                    if (!this.timeStart || !this.timeEnd || totalCycleTimeSec <= 0) {
                         this.targetQty = 0;
                         return;
                     }
@@ -368,7 +429,7 @@
                     if (diffSeconds < 0) diffSeconds = 0; // Prevent negative
 
                     // Calculate Target
-                    this.targetQty = Math.floor(diffSeconds / this.cycleTime);
+                    this.targetQty = Math.floor(diffSeconds / totalCycleTimeSec);
                     this.calculateAchievement();
                 },
 
