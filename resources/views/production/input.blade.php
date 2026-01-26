@@ -154,7 +154,7 @@
                             <div x-show="showHeatNumberSuggestions && heatNumberList.length > 0"
                                 class="absolute z-10 w-full bg-white border border-slate-200 rounded-xl shadow-lg mt-1 max-h-60 overflow-y-auto"
                                 style="display: none;">
-                                <template x-for="hn in heatNumberList" :key="hn.heat_number">
+                                <template x-for="hn in heatNumberList" :key="hn.id">
                                     <div @click="selectHeatNumber(hn)"
                                         class="p-3 hover:bg-blue-50 cursor-pointer border-b border-slate-50 last:border-none">
                                         <p class="text-sm font-bold text-slate-700" x-text="hn.heat_number"></p>
@@ -252,14 +252,32 @@
                     </div>
 
                     {{-- Capaian Row --}}
-                    <div class="space-y-1.5 mt-2">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Capaian</label>
-                        <div class="w-full rounded-xl text-center font-bold text-lg p-3 border" :class="{
-                                                    'bg-emerald-50 text-emerald-600 border-emerald-200': achievement >= 100,
-                                                    'bg-amber-50 text-amber-600 border-amber-200': achievement >= 80 && achievement < 100,
-                                                    'bg-red-50 text-red-600 border-red-200': achievement < 80
-                                                }">
-                            <span x-text="achievement + '%'">0%</span>
+                    {{-- Keterangan & Capaian --}}
+                    <div class="grid grid-cols-2 gap-4 mt-2">
+                        {{-- Keterangan Dropdown --}}
+                        <div class="space-y-1.5">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Keterangan
+                                (Opsional)</label>
+                            <select name="remark"
+                                class="w-full bg-slate-50 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm p-3 font-medium text-slate-700">
+                                <option value="" selected>Normal (Selesai)</option>
+                                <option value="K1-1 sisi">K1-1 sisi</option>
+                                <option value="K1-2 sisi">K1-2 sisi</option>
+                                <option value="K1- Finish ID">K1- Finish ID</option>
+                                <option value="Finish 1 sisi">Finish 1 sisi</option>
+                            </select>
+                        </div>
+
+                        {{-- Capaian --}}
+                        <div class="space-y-1.5">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Capaian</label>
+                            <div class="w-full rounded-xl text-center font-bold text-lg p-3 border" :class="{
+                                                            'bg-emerald-50 text-emerald-600 border-emerald-200': achievement >= 100,
+                                                            'bg-amber-50 text-amber-600 border-amber-200': achievement >= 80 && achievement < 100,
+                                                            'bg-red-50 text-red-600 border-red-200': achievement < 80
+                                                        }">
+                                <span x-text="achievement + '%'">0%</span>
+                            </div>
                         </div>
                     </div>
 

@@ -28,6 +28,7 @@ class ProductionLog extends Model
         'target_qty',
         'actual_qty',
         'achievement_percent',
+        'remark',
         'note',
     ];
 

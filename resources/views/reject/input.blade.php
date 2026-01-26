@@ -121,7 +121,7 @@
                     <div x-show="showHeatNumberSuggestions && heatNumberList.length > 0"
                         class="absolute z-10 w-full bg-white border border-slate-200 rounded-xl shadow-lg mt-1 max-h-60 overflow-y-auto"
                         style="display: none;">
-                        <template x-for="hn in heatNumberList" :key="hn.heat_number">
+                        <template x-for="hn in heatNumberList" :key="hn.id">
                             <div @click="selectHeatNumber(hn)"
                                 class="p-3 hover:bg-orange-50 cursor-pointer border-b border-slate-50">
                                 <p class="text-sm font-bold text-slate-700" x-text="hn.heat_number"></p>

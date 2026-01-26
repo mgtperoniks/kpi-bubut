@@ -7,9 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class MdHeatNumberMirror extends Model
 {
     protected $table = 'md_heat_numbers_mirror';
-    protected $primaryKey = 'heat_number';
-    public $incrementing = false;
-    protected $keyType = 'string';
+    // protected $primaryKey = 'heat_number'; // Default is 'id'
+    // public $incrementing = false; // Default is true
+    // protected $keyType = 'string'; // Default is int
     public $timestamps = false;
 
     protected $fillable = [

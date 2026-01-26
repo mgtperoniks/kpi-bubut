@@ -24,7 +24,9 @@ class PullMasterHeatNumbers extends Command
             ->orderBy('id')
             ->chunk(500, function ($rows) use (&$count) {
                 foreach ($rows as $row) {
-                    $mirror = MdHeatNumberMirror::where('heat_number', $row->heat_number)->first();
+                    $mirror = MdHeatNumberMirror::where('heat_number', $row->heat_number)
+                        ->where('item_code', $row->item_code)
+                        ->first();
 
                     // Compare source_updated_at to avoid unnecessary writes
                     if ($mirror && $mirror->source_updated_at && Carbon::parse($mirror->source_updated_at)->equalTo(Carbon::parse($row->updated_at))) {
@@ -32,10 +34,12 @@ class PullMasterHeatNumbers extends Command
                     }
 
                     MdHeatNumberMirror::updateOrCreate(
-                        ['heat_number' => trim($row->heat_number)],
+                        [
+                            'heat_number' => trim($row->heat_number),
+                            'item_code' => trim($row->item_code)
+                        ],
                         [
                             'kode_produksi' => trim($row->kode_produksi),
-                            'item_code' => trim($row->item_code),
                             'item_name' => trim($row->item_name),
                             'size' => trim($row->size),
                             'customer' => trim($row->customer),

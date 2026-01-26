@@ -68,6 +68,7 @@ class ProductionController extends Controller
             'cycle_time_seconds' => 'required|integer|min:0|max:59',
 
             'actual_qty' => 'required|integer|min:0',
+            'remark' => 'nullable|string|max:50',
         ]);
 
         /**
@@ -157,6 +158,7 @@ class ProductionController extends Controller
             'target_qty' => $targetQty,
             'actual_qty' => $actualQty,
             'achievement_percent' => $achievementPercent,
+            'remark' => $validated['remark'] ?? null,
         ]);
 
         return redirect()

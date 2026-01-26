@@ -102,7 +102,7 @@ class AutocompleteController extends Controller
                     ->orWhere('item_name', 'like', "%{$query}%");
             })
             ->limit(20)
-            ->get(['heat_number', 'item_code', 'item_name', 'size', 'customer', 'line']);
+            ->get(['id', 'heat_number', 'item_code', 'item_name', 'size', 'customer', 'line']);
 
         return response()->json($heatNumbers);
     }
