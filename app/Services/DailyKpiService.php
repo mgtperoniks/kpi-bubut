@@ -25,7 +25,10 @@ class DailyKpiService
             ->groupBy('department_code', 'operator_code')
             ->get();
 
+        // 1. Update or Create for active operators
+        $activeOperators = [];
         foreach ($rows as $row) {
+            $activeOperators[] = $row->operator_code;
 
             $kpiPercent = $row->total_target_qty > 0
                 ? round(($row->total_actual_qty / $row->total_target_qty) * 100, 2)
@@ -45,6 +48,11 @@ class DailyKpiService
                 ]
             );
         }
+
+        // 2. Remove Stale Records (Operators that no longer have logs for this date)
+        DailyKpiOperator::where('kpi_date', $date)
+            ->whereNotIn('operator_code', $activeOperators)
+            ->delete();
     }
 
     /**
@@ -63,7 +71,10 @@ class DailyKpiService
             ->groupBy('department_code', 'machine_code')
             ->get();
 
+        // 1. Update active machines
+        $activeMachines = [];
         foreach ($rows as $row) {
+            $activeMachines[] = $row->machine_code;
 
             $kpiPercent = $row->total_target_qty > 0
                 ? round(($row->total_actual_qty / $row->total_target_qty) * 100, 2)
@@ -83,6 +94,11 @@ class DailyKpiService
                 ]
             );
         }
+
+        // 2. Remove Stale Records
+        DailyKpiMachine::where('kpi_date', $date)
+            ->whereNotIn('machine_code', $activeMachines)
+            ->delete();
     }
 }
 

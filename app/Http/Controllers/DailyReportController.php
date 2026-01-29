@@ -123,8 +123,13 @@ class DailyReportController extends Controller
 
         // Simpan info untuk flash message
         $info = "Inputan Operator {$log->operator_code} di Mesin {$log->machine_code}";
+        $date = $log->production_date; // Capture date before delete
 
         $log->delete();
+
+        // Regenerate KPI (Sync Dashboard)
+        \App\Services\DailyKpiService::generateOperatorDaily($date);
+        \App\Services\DailyKpiService::generateMachineDaily($date);
 
         return redirect()
             ->back()

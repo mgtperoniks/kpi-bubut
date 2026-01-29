@@ -12,7 +12,7 @@
         </div>
 
         {{-- Form Section --}}
-        <form action="{{ route('production.store') }}" method="POST" class="space-y-6">
+        <form id="production-form" action="{{ route('production.store') }}" method="POST" class="space-y-6">
             @csrf
 
             {{-- Section 1: Waktu & Shift ( 1 Row, 4 Columns ) --}}
@@ -272,10 +272,10 @@
                         <div class="space-y-1.5">
                             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Capaian</label>
                             <div class="w-full rounded-xl text-center font-bold text-lg p-3 border" :class="{
-                                                            'bg-emerald-50 text-emerald-600 border-emerald-200': achievement >= 100,
-                                                            'bg-amber-50 text-amber-600 border-amber-200': achievement >= 80 && achievement < 100,
-                                                            'bg-red-50 text-red-600 border-red-200': achievement < 80
-                                                        }">
+                                                                                    'bg-emerald-50 text-emerald-600 border-emerald-200': achievement >= 100,
+                                                                                    'bg-amber-50 text-amber-600 border-amber-200': achievement >= 80 && achievement < 100,
+                                                                                    'bg-red-50 text-red-600 border-red-200': achievement < 80
+                                                                                }">
                                 <span x-text="achievement + '%'">0%</span>
                             </div>
                         </div>
@@ -294,7 +294,7 @@
                     </div>
                 </div>
             @else
-                <button type="submit"
+                <button type="button" @click="confirmSubmit"
                     class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 hover:bg-blue-700 active:scale-95 transition-transform">
                     <span class="material-icons-round">save_alt</span>
                     Simpan Data Produksi
@@ -476,8 +476,90 @@
                     if (!t) return 0;
                     const [h, m] = t.split(':');
                     return parseInt(h) * 60 + parseInt(m); // return minutes
+                },
+
+                // Confirmation Popup
+                // Confirmation Popup
+                confirmSubmit() {
+                    // Default values to 0 if empty
+                    this.cycleTimeMinutes = this.cycleTimeMinutes || '0';
+                    this.cycleTimeSeconds = this.cycleTimeSeconds || '0';
+
+                    // Basic Validation (Check required fields manually if needed, or rely on form validation after check)
+                    // Since we are intercepting, HTML5 required won't trigger on button click automatically if type=button.
+                    // So we check keys manually
+                    if (!this.selectedOperatorCode || !this.selectedMachineCode || !this.selectedItemCode || !this.timeStart || !this.timeEnd || !this.actualQty) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Data Belum Lengkap',
+                            text: 'Mohon lengkapi semua field yang berafiliasi dengan tanda bintang/required.',
+                            confirmButtonColor: '#3b82f6'
+                        });
+                        return;
+                    }
+
+                    // Validate Cycle Time > 0
+                    const totalSec = (parseInt(this.cycleTimeMinutes) * 60) + parseInt(this.cycleTimeSeconds);
+                    if (totalSec <= 0) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Cycle Time Invalid',
+                            text: 'Total Cycle Time tidak boleh 0 detik.',
+                            confirmButtonColor: '#3b82f6'
+                        });
+                        return;
+                    }
+
+                    const summaryHtml = `
+                                <div class="text-left text-sm text-slate-600 space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                    <div class="flex justify-between border-b border-slate-200 pb-2">
+                                        <span class="font-medium">Operator:</span>
+                                        <span class="font-bold text-slate-800">${this.selectedOperatorName}</span>
+                                    </div>
+                                    <div class="flex justify-between border-b border-slate-200 pb-2">
+                                        <span class="font-medium">Mesin:</span>
+                                        <span class="font-bold text-slate-800">${this.machineSearch}</span>
+                                    </div>
+                                    <div class="flex justify-between border-b border-slate-200 pb-2">
+                                        <span class="font-medium">Barang/Heat:</span>
+                                        <span class="font-bold text-slate-800">${this.selectedItemName} (${this.selectedHeatNumber || '-'})</span>
+                                    </div>
+                                    <div class="flex justify-between border-b border-slate-200 pb-2">
+                                        <span class="font-medium">Cycle Time:</span>
+                                        <span class="font-bold text-slate-800">${this.cycleTimeMinutes}m ${this.cycleTimeSeconds}s</span>
+                                    </div>
+                                    <div class="flex justify-between border-b border-slate-200 pb-2">
+                                        <span class="font-medium">Waktu:</span>
+                                        <span class="font-bold text-slate-800">${this.timeStart} - ${this.timeEnd}</span>
+                                    </div>
+                                    <div class="flex justify-between pt-1">
+                                        <span class="font-medium">Hasil Output:</span>
+                                        <span class="font-bold text-blue-600 text-lg">${this.actualQty} PCS</span>
+                                    </div>
+                                </div>
+                            `;
+
+                    Swal.fire({
+                        title: 'Verifikasi Data',
+                        html: summaryHtml,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya, Lanjutkan',
+                        cancelButtonText: 'Periksa Lagi',
+                        confirmButtonColor: '#2563eb', // Blue
+                        cancelButtonColor: '#dc2626', // Red
+                        reverseButtons: true,
+                        focusConfirm: false
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Submit user form
+                            document.getElementById('production-form').submit();
+                        }
+                    });
                 }
             }
         }
     </script>
+
+    {{-- SweetAlert2 bundled in app.js --}}
 @endsection
