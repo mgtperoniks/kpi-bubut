@@ -1,14 +1,7 @@
 @import 'tailwindcss';
 @import '@fontsource/inter';
+@import '@fontsource/material-icons-round';
 
-/* Manual local font import for offline support */
-@font-face {
-    font-family: 'Material Icons Round';
-    font-style: normal;
-    font-weight: 400;
-    src: url('/fonts/material-icons-round-latin-400-normal.woff2') format('woff2'),
-        url('/fonts/material-icons-round-latin-400-normal.woff') format('woff');
-}
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';

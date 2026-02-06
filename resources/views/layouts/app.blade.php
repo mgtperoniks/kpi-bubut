@@ -7,17 +7,7 @@
 
     <title>@yield('title', 'KPI Bubut')</title>
 
-    {{-- Fonts & Icons --}}
-    <style>
-        @font-face {
-            font-family: 'Material Icons Round';
-            font-style: normal;
-            font-weight: 400;
-            src: url("{{ asset('fonts/material-icons-round-latin-400-normal.woff2') }}") format('woff2'),
-                url("{{ asset('fonts/material-icons-round-latin-400-normal.woff') }}") format('woff');
-        }
-    </style>
-    {{-- Local icons imported in app.css --}}
+    {{-- Fonts & Icons (Localized via app.css) --}}
 
     {{-- Scripts & Styles --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
