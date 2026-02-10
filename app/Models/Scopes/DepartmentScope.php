@@ -17,10 +17,10 @@ class DepartmentScope implements Scope
         if (Auth::check()) {
             $user = Auth::user();
 
-            // 1. Direktur, MR, HR, Guest (and Special HR Emails): Full access by default, or session context
+            // 1. Direktur, MR, HR, Guest, Admin Dept (and Special HR Emails): Full access by default, or session context
             $isSpecialHr = in_array($user->email, ['adminhr@peroniks.com', 'managerhr@peroniks.com']);
 
-            if (in_array($user->role, ['direktur', 'mr', 'hr_admin', 'hr_manager', 'guest']) || $isSpecialHr) {
+            if (in_array($user->role, ['direktur', 'mr', 'hr_admin', 'hr_manager', 'guest', 'admin_dept']) || $isSpecialHr) {
                 if (session()->has('selected_department_code')) {
                     $selected = session('selected_department_code');
                     if ($selected !== 'all') {
@@ -95,8 +95,9 @@ class DepartmentScope implements Scope
                 return;
             }
 
-            // 5. Default / Kabag / Read-only: Exact sub-department
-            $builder->where('department_code', $user->department_code);
+            // 5. Default / Kabag / Read-only: Hierarchical sub-department matching
+            // Using LIKE allows 404 to see 404.1, 404.2, etc.
+            $builder->where('department_code', 'LIKE', $user->department_code . '%');
         }
     }
 }

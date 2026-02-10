@@ -31,19 +31,28 @@ class ManualSyncController extends Controller
 
         try {
             // 1. Pull Master Data (Bersifat opsional, jika gagal tetap lanjut ke KPI)
-            try {
-                Artisan::call('pull:master-items');
-                Artisan::call('pull:master-operators');
-                Artisan::call('pull:master-machines');
-                Artisan::call('pull:master-heat-numbers');
-            } catch (\Exception $e) {
-                // Log error tapi jangan hentikan proses KPI
-                \Log::error("Sync Master Data failed: " . $e->getMessage());
+            $commands = [
+                'pull:master-items',
+                'pull:master-operators',
+                'pull:master-machines',
+                'pull:master-heat-numbers'
+            ];
+
+            foreach ($commands as $cmd) {
+                try {
+                    \Log::info("Executing manual sync: $cmd");
+                    Artisan::call($cmd);
+                    \Log::info("Manual sync $cmd finished: " . Artisan::output());
+                } catch (\Exception $e) {
+                    \Log::error("Sync $cmd failed: " . $e->getMessage());
+                }
             }
 
             // 2. Regenerate KPI for the range (or single date)
             $current = \Carbon\Carbon::parse($startDate);
             $last = \Carbon\Carbon::parse($endDate);
+
+            \Log::info("Regenerating KPI range: $startDate to $endDate");
 
             while ($current->lte($last)) {
                 DailyKpiService::generateOperatorDaily($current->toDateString());
@@ -54,6 +63,7 @@ class ManualSyncController extends Controller
             $dateLabel = ($startDate === $endDate) ? $startDate : "$startDate s/d $endDate";
             return back()->with('success', 'KPI telah diperbarui untuk ' . $dateLabel);
         } catch (\Exception $e) {
+            \Log::error("Manual Sync Fatal Error: " . $e->getMessage());
             return back()->with('error', 'Gagal melakukan sinkronisasi: ' . $e->getMessage());
         }
     }
