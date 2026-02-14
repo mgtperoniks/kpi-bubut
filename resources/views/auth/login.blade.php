@@ -21,6 +21,7 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
+            zoom: 0.8;
         }
     </style>
 </head>
