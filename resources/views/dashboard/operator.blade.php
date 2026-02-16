@@ -5,20 +5,14 @@
 @section('content')
 
     {{-- Header --}}
-    <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-800">Dashboard Operator</h1>
-            <p class="text-gray-500">
-                Trend KPI Operator:
-                <span class="font-semibold text-gray-700">
-                    {{ \Carbon\Carbon::parse($startDate)->format('d M Y') }}
-                </span>
-                s/d
-                <span class="font-semibold text-gray-700">
-                    {{ \Carbon\Carbon::parse($endDate)->format('d M Y') }}
-                </span>
-            </p>
-        </div>
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Dashboard Operator</h1>
+        <p class="text-gray-500">
+            Trend KPI Operator:
+            <span class="font-semibold text-gray-700">{{ \Carbon\Carbon::parse($startDate)->format('d M Y') }}</span>
+            s/d
+            <span class="font-semibold text-gray-700">{{ \Carbon\Carbon::parse($endDate)->format('d M Y') }}</span>
+        </p>
     </div>
 
     {{-- Flash Messages --}}
@@ -33,21 +27,16 @@
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
         <div class="p-4 border-b border-gray-100 bg-gray-50">
             <form method="GET" id="filterForm" class="flex flex-col md:flex-row md:items-end gap-3">
-                {{-- Start Date --}}
                 <div>
                     <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Dari Tanggal</label>
                     <input type="date" name="start_date" id="start_date" value="{{ request('start_date', $startDate) }}"
                            class="block w-full shadow-sm text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 py-1.5">
                 </div>
-
-                {{-- End Date --}}
                 <div>
                     <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Sampai Tanggal</label>
                     <input type="date" name="end_date" id="end_date" value="{{ request('end_date', $endDate) }}"
                            class="block w-full shadow-sm text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 py-1.5">
                 </div>
-
-                {{-- Operator Dropdown --}}
                 <div>
                     <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Operator</label>
                     <select name="operator_code" id="operator_code" class="select2-search block w-56 shadow-sm text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 py-1.5">
@@ -59,8 +48,6 @@
                         @endforeach
                     </select>
                 </div>
-
-                {{-- Generate Button --}}
                 <div class="flex">
                     <button type="submit" class="px-5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-wide rounded-md transition-colors shadow-sm h-fit inline-flex items-center gap-2">
                         <span class="material-icons-round text-sm">auto_graph</span>
@@ -76,19 +63,16 @@
         <div class="flex justify-between items-center mb-4">
             <div>
                 <h4 class="text-sm font-bold text-slate-800">Trend KPI Operator (%)</h4>
-                <p class="text-[10px] text-slate-400 mt-0.5">
-                    Klik legend di bawah chart untuk show/hide operator tertentu
-                </p>
+                <p class="text-[10px] text-slate-400 mt-0.5">Klik legend di bawah chart untuk show/hide operator tertentu</p>
             </div>
             <span class="material-icons-round text-slate-400">show_chart</span>
         </div>
 
         @if(count($chartDatasets) > 0)
-            <div id="chartWrapper" class="relative w-full" style="height: 480px;">
+            <div class="relative w-full" style="height: 480px;">
                 <canvas id="operatorKpiChart"></canvas>
             </div>
 
-            {{-- Summary Info --}}
             <div class="mt-4 pt-4 border-t border-slate-100 flex flex-wrap gap-4 text-xs text-slate-500">
                 <div class="flex items-center gap-1.5">
                     <span class="material-icons-round text-sm text-blue-500">people</span>
@@ -99,8 +83,12 @@
                     <span><strong>{{ count($chartLabels) }}</strong> hari data</span>
                 </div>
                 <div class="flex items-center gap-1.5">
-                    <span class="material-icons-round text-sm text-orange-500">horizontal_rule</span>
-                    <span class="text-red-500 font-semibold">Garis merah putus-putus = Target KPI 90%</span>
+                    <span style="display:inline-block;width:18px;height:2px;border-top:2px dashed rgba(239,68,68,0.6);vertical-align:middle;"></span>
+                    <span class="text-red-500 font-semibold">Target KPI 85%</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <span style="display:inline-block;width:18px;height:2px;border-top:2px dashed rgba(34,197,94,0.7);vertical-align:middle;"></span>
+                    <span class="text-emerald-600 font-semibold">Trendline (Regresi Linear)</span>
                 </div>
             </div>
         @else
@@ -115,66 +103,132 @@
 @endsection
 
 @push('scripts')
-<script>
-    // Initialize Select2
-    $(document).ready(function() {
-        $('.select2-search').select2({
-            width: '100%',
-            placeholder: 'Pilih Operator',
-            allowClear: false
-        });
-    });
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
 
-    document.addEventListener('DOMContentLoaded', function() {
-        var startDateInput = document.getElementById('start_date');
-        var endDateInput = document.getElementById('end_date');
-        var filterForm = document.getElementById('filterForm');
+            // Select2 init
+            $('.select2-search').select2({ width: '100%', placeholder: 'Pilih Operator', allowClear: false });
 
-        // Form validation
-        filterForm.addEventListener('submit', function(e) {
-            var start = new Date(startDateInput.value);
-            var end = new Date(endDateInput.value);
-            var diffTime = Math.abs(end - start);
-            var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            // Form validation
+            var filterForm = document.getElementById('filterForm');
+            filterForm.addEventListener('submit', function(e) {
+                var start = new Date(document.getElementById('start_date').value);
+                var end = new Date(document.getElementById('end_date').value);
+                var diffDays = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24));
+                if (diffDays > 31) { e.preventDefault(); Swal.fire({ icon: 'warning', title: 'Batas Waktu', text: 'Rentang tanggal maksimal 31 hari.' }); return; }
+                if (end < start) { e.preventDefault(); Swal.fire({ icon: 'error', title: 'Tanggal Tidak Valid', text: 'Tanggal akhir harus lebih besar dari tanggal mulai.' }); return; }
+            });
 
-            if (diffDays > 31) {
-                e.preventDefault();
-                Swal.fire({ icon: 'warning', title: 'Batas Waktu', text: 'Rentang tanggal maksimal 31 hari.' });
-                return;
+            // ===== LINEAR REGRESSION FUNCTION =====
+            function linearRegression(data) {
+                var n = 0, sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+                for (var i = 0; i < data.length; i++) {
+                    if (data[i] !== null && data[i] !== undefined) {
+                        n++;
+                        sumX += i;
+                        sumY += data[i];
+                        sumXY += i * data[i];
+                        sumXX += i * i;
+                    }
+                }
+                if (n < 2) return null;
+                var slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+                var intercept = (sumY - slope * sumX) / n;
+                return { slope: slope, intercept: intercept, n: n };
             }
-            if (end < start) {
-                e.preventDefault();
-                Swal.fire({ icon: 'error', title: 'Tanggal Tidak Valid', text: 'Tanggal akhir harus lebih besar dari tanggal mulai.' });
-                return;
-            }
-        });
 
-        // ===== CHART =====
-        try {
+            // ===== CHART =====
             var chartCanvas = document.getElementById('operatorKpiChart');
-            if (!chartCanvas) { console.log('Canvas not found'); return; }
-            if (typeof Chart === 'undefined') { throw new Error('Chart.js not loaded'); }
+            if (!chartCanvas) return;
 
-            var chartLabels = {!! json_encode($chartLabels) !!};
-            var chartDatasets = {!! json_encode($chartDatasets) !!};
-            var operatorNameMap = {!! json_encode($operatorNames) !!};
-
-            console.log('Labels:', chartLabels.length, 'Datasets:', chartDatasets.length);
+            var chartLabels = @json($chartLabels);
+            var chartDatasets = @json($chartDatasets);
+            var operatorNameMap = @json($operatorNames);
+            var isSingleOperator = (chartDatasets.length === 1);
 
             // Map operator codes to names
             for (var i = 0; i < chartDatasets.length; i++) {
-                var opName = operatorNameMap[chartDatasets[i].label];
-                if (opName) {
-                    chartDatasets[i].label = chartDatasets[i].label + ' - ' + opName;
+                var nm = operatorNameMap[chartDatasets[i].label];
+                if (nm) { chartDatasets[i].label = chartDatasets[i].label + ' - ' + nm; }
+            }
+
+            // ===== ADD TRENDLINE (LINEAR REGRESSION) =====
+            if (isSingleOperator) {
+                // Single operator: trendline for that operator
+                var reg = linearRegression(chartDatasets[0].data);
+                if (reg) {
+                    var trendData = [];
+                    for (var k = 0; k < chartLabels.length; k++) {
+                        trendData.push(Math.round((reg.intercept + reg.slope * k) * 10) / 10);
+                    }
+                    var trendDir = '';
+                    if (reg.slope > 0.3) trendDir = ' ↗ Naik';
+                    else if (reg.slope < -0.3) trendDir = ' ↘ Turun';
+                    else trendDir = ' → Stabil';
+
+                    chartDatasets.push({
+                        label: 'Trendline' + trendDir,
+                        data: trendData,
+                        borderColor: 'rgba(34, 197, 94, 0.7)',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2.5,
+                        borderDash: [8, 5],
+                        pointRadius: 0,
+                        pointHoverRadius: 0,
+                        tension: 0,
+                        fill: false,
+                        order: 998,
+                        _isTrend: true
+                    });
+                }
+            } else {
+                // All operators: calculate average KPI per date, then one overall trendline
+                var avgData = [];
+                for (var d = 0; d < chartLabels.length; d++) {
+                    var sum = 0, count = 0;
+                    for (var o = 0; o < chartDatasets.length; o++) {
+                        var val = chartDatasets[o].data[d];
+                        if (val !== null && val !== undefined) {
+                            sum += val;
+                            count++;
+                        }
+                    }
+                    avgData.push(count > 0 ? sum / count : null);
+                }
+                var regAll = linearRegression(avgData);
+                if (regAll) {
+                    var trendAllData = [];
+                    for (var k2 = 0; k2 < chartLabels.length; k2++) {
+                        trendAllData.push(Math.round((regAll.intercept + regAll.slope * k2) * 10) / 10);
+                    }
+                    var trendDirAll = '';
+                    if (regAll.slope > 0.3) trendDirAll = ' ↗ Naik';
+                    else if (regAll.slope < -0.3) trendDirAll = ' ↘ Turun';
+                    else trendDirAll = ' → Stabil';
+
+                    chartDatasets.push({
+                        label: 'Trend Keseluruhan' + trendDirAll,
+                        data: trendAllData,
+                        borderColor: 'rgba(34, 197, 94, 0.7)',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2.5,
+                        borderDash: [8, 5],
+                        pointRadius: 0,
+                        pointHoverRadius: 0,
+                        tension: 0,
+                        fill: false,
+                        order: 998,
+                        _isTrend: true
+                    });
                 }
             }
 
-            // Add 90% target reference line
-            var targetData = [];
-            for (var j = 0; j < chartLabels.length; j++) { targetData.push(90); }
+            // Add 85% target line
+            var target85 = [];
+            for (var j = 0; j < chartLabels.length; j++) { target85.push(85); }
             chartDatasets.push({
-                label: 'Target KPI 90%',
-                data: targetData,
+                label: 'Target KPI 85%',
+                data: target85,
                 borderColor: 'rgba(239, 68, 68, 0.5)',
                 backgroundColor: 'transparent',
                 borderWidth: 2,
@@ -183,25 +237,28 @@
                 pointHoverRadius: 0,
                 tension: 0,
                 fill: false,
-                order: 999
+                order: 999,
+                _isTrend: true
             });
 
             var ctx = chartCanvas.getContext('2d');
             new Chart(ctx, {
                 type: 'line',
-                data: { labels: chartLabels, datasets: chartDatasets },
+                data: {
+                    labels: chartLabels,
+                    datasets: chartDatasets
+                },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    interaction: { mode: 'index', intersect: false },
                     plugins: {
                         legend: {
                             display: true,
                             position: 'bottom',
                             labels: {
                                 usePointStyle: true,
-                                boxWidth: 8,
-                                padding: 12,
+                                boxWidth: 6,
+                                padding: 10,
                                 font: { size: 10, family: 'Inter' }
                             }
                         },
@@ -209,7 +266,9 @@
                             mode: 'index',
                             intersect: false,
                             filter: function(tooltipItem) {
-                                return tooltipItem.dataset.label !== 'Target KPI 90%';
+                                // Hide target and trendlines from tooltip
+                                var ds = tooltipItem.dataset;
+                                return !ds._isTrend;
                             },
                             callbacks: {
                                 label: function(context) {
@@ -242,19 +301,14 @@
                             },
                             border: { display: false }
                         }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
                     }
                 }
             });
-            console.log('Chart rendered OK');
-        } catch(err) {
-            console.error('Chart Error:', err);
-            var wrapper = document.getElementById('chartWrapper');
-            if (wrapper) {
-                wrapper.innerHTML = '<div style="padding:20px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;color:#991b1b;font-size:13px;">'
-                    + '<strong>Chart Error:</strong> ' + err.message
-                    + '<br><small>Tekan F12 untuk melihat detail error di Console.</small></div>';
-            }
-        }
-    });
-</script>
+        });
+    </script>
 @endpush
